@@ -1,0 +1,26 @@
+version: '2'
+
+services: 
+  pikafish:
+    image: leetun2k2/pikafish
+    container_name: 'pikafish'
+    tty: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
+
+  chinese_chess_train:
+    image: u03013112/chinese_chess_train:v1
+    container_name: 'chinese_chess'
+    privileged: true
+    tty: true
+    volumes:
+      - ../src:/src
+      - /proc:/host/proc
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
