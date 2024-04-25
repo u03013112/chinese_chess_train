@@ -108,41 +108,98 @@ class Img2Fen:
                 good.append([m])
         return len(good)
 
+    # def getChessName(self, imgSrc, lstRect):
+    #     lstName = [] 
+    #     for xy in lstRect:
+    #         x1, y1, x2, y2 = xy
+    #         img = imgSrc[y1:y2, x1:x2]
+    #         lstSim = []
+    #         colorSim = []
+    #         for d in self.data:
+    #             f = list(d.keys())[0]
+    #             img2 = d[f]
+
+    #             sim = self.compareFeature(img, img2)
+    #             lstSim.append({f: sim})
+    #             hist1 = self.extractColorHistogram(img)
+    #             hist2 = self.extractColorHistogram(img2)
+    #             cSim = self.compareHistograms(hist1, hist2)
+    #             colorSim.append({f: cSim})
+
+    #         lstSim.sort(key=lambda x: x[list(x.keys())[0]], reverse=True)
+    #         colorSim.sort(key=lambda x: x[list(x.keys())[0]], reverse=True)
+    #         chessTypeName = list(lstSim[0].keys())[0].split(".")[0][1]
+    #         chessColorName = list(colorSim[0].keys())[0].split(".")[0][0]
+    #         chessName = chessColorName + chessTypeName
+
+
+    #         print(chessName)
+    #         print(lstSim)
+    #         print(colorSim)
+    #         print('-------------------')
+
+    #         lstName.append(chessName)
+
+    #     return lstName
+
     def getChessName(self, imgSrc, lstRect):
         lstName = [] 
         for xy in lstRect:
             x1, y1, x2, y2 = xy
             img = imgSrc[y1:y2, x1:x2]
             lstSim = []
-            colorSim = []
             for d in self.data:
                 f = list(d.keys())[0]
                 img2 = d[f]
 
                 sim = self.compareFeature(img, img2)
                 lstSim.append({f: sim})
-                hist1 = self.extractColorHistogram(img)
-                hist2 = self.extractColorHistogram(img2)
-                cSim = self.compareHistograms(hist1, hist2)
-                colorSim.append({f: cSim})
 
             lstSim.sort(key=lambda x: x[list(x.keys())[0]], reverse=True)
-            colorSim.sort(key=lambda x: x[list(x.keys())[0]], reverse=True)
             chessTypeName = list(lstSim[0].keys())[0].split(".")[0][1]
-            chessColorName = list(colorSim[0].keys())[0].split(".")[0][0]
+            chessColorName = list(lstSim[0].keys())[0].split(".")[0][0]
+
+            # 如果特征相似度前两位结果比较相似，并且只是颜色有差异，则进入颜色比对
+            if abs(list(lstSim[0].values())[0] - list(lstSim[1].values())[0]) < 3 \
+                and list(lstSim[0].keys())[0][1:] == list(lstSim[1].keys())[0][1:]:
+                print(lstSim)
+                print('进入颜色比对')
+                colorSim = []
+                for f in self.data:
+                    g = list(f.keys())[0]
+                    if g != list(lstSim[0].keys())[0] and g != list(lstSim[1].keys())[0]:
+                        continue
+                    img2 = f[g]
+                    hist1 = self.extractColorHistogram(img)
+                    hist2 = self.extractColorHistogram(img2)
+                    cSim = self.compareHistograms(hist1, hist2)
+                    colorSim.append({g: cSim})
+                colorSim.sort(key=lambda x: x[list(x.keys())[0]], reverse=True)
+                chessColorName = list(colorSim[0].keys())[0].split(".")[0][0]
+
             chessName = chessColorName + chessTypeName
+
+            print(chessName)
+            print(lstSim)
+            if 'colorSim' in locals():
+                print(colorSim)
+            print('-------------------')
 
             lstName.append(chessName)
 
         return lstName
 
+
     def getFenFromImg(self, img):
+        print('shape1:',img.shape)
         # 标准分辨率会比较大，缩小一倍不影响识别，并且会加快识别速度
         img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
+        print('shape2:',img.shape)
 
         lstName, lstRect = self.getLstNameAndLstRect(img)
 
-        print(lstName)
+        # print(lstName)
+        # print(lstRect)
 
         # # 找到 红车 与 黑车 的位置，以此确定棋盘的位置
         # rRectList = []
@@ -202,10 +259,19 @@ class Img2Fen:
         return fen
 
 if __name__ == '__main__':
+    # from PIL import ImageGrab
+    # img = ImageGrab.grab()
+    # imgNp = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+    # imgNp.save('screen.png')
     img2fen = Img2Fen()
     img2fen.init()
-    img = cv2.imread('screen.png')
-    # 将最下面裁掉50像素
-    img = img[:-150]
-    fen = img2fen.getFenFromImg(img)
+    img1 = cv2.imread('screen.png')
+    img1 = img1[:-238]
+    # img1 = cv2.cvtColor(np.array(img1), cv2.COLOR_RGB2BGR)
+
+    img2 = cv2.imread('/Users/u03013112/Downloads/cc2.png')
+    print(img1.shape)
+    print(img2.shape)
+    
+    fen = img2fen.getFenFromImg(img1)
     print(fen)
