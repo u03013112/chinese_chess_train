@@ -142,12 +142,32 @@ class Img2Fen:
 
         lstName, lstRect = self.getLstNameAndLstRect(img)
 
+        print(lstName)
+
+        # # 找到 红车 与 黑车 的位置，以此确定棋盘的位置
+        # rRectList = []
+        # for i in range(len(lstName)):
+        #     if lstName[i] == '红车':
+        #         rRectList.append(lstRect[i])
+        #     if lstName[i] == '黑车':
+        #         rRectList.append(lstRect[i])
+
+        # if len(rRectList) != 4:
+        #     print('未找到红车和黑车')
+        #     return ''
+
         if self.boardPosition is None:
             boardX1, boardY1 = min([(x1 + x2) // 2 for x1, _, x2, _ in lstRect]), min([(y1 + y2) // 2 for _, y1, _, y2 in lstRect])
             boardX2, boardY2 = max([(x1 + x2) // 2 for x1, _, x2, _ in lstRect]), max([(y1 + y2) // 2 for _, y1, _, y2 in lstRect])
             self.boardPosition = (boardX1, boardY1, boardX2, boardY2)
         else:
             boardX1, boardY1, boardX2, boardY2 = self.boardPosition
+
+        # debug 将棋盘画出来
+        cv2.rectangle(img, (boardX1, boardY1), (boardX2, boardY2), (0, 255, 0), 2)
+        cv2.imshow('debug', img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
         cellWidth = (boardX2 - boardX1) // 8
         cellHeight = (boardY2 - boardY1) // 9
@@ -184,6 +204,8 @@ class Img2Fen:
 if __name__ == '__main__':
     img2fen = Img2Fen()
     img2fen.init()
-    img = cv2.imread('/Users/u03013112/Downloads/cc2.png')
+    img = cv2.imread('screen.png')
+    # 将最下面裁掉50像素
+    img = img[:-150]
     fen = img2fen.getFenFromImg(img)
     print(fen)
