@@ -159,7 +159,8 @@ class Img2Fen:
             x = (x1 + x2) / 2
             y = (y1 + y2) / 2
             j = round((x - boardX1) / cellWidth)
-            i = round((y - boardY1) / cellHeight)
+            # i = round((y - boardY1) / cellHeight)
+            i = round((boardY2 - y) / cellHeight)
             boardMatrix[i][j] = piece
 
         fen = ""

@@ -65,5 +65,5 @@ if __name__ == '__main__':
     pikafish.sendCMD("uci", my_callback)
 
     # 不使用回调函数
-    # response = pikafish.sendCMD("position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+    # response = pikafish.sendCMD("position fen rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w KQkq - 0 1")
     # print(f"Received response: {response}")
