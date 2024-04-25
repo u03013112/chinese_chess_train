@@ -4,7 +4,11 @@ import numpy as np
 
 class Img2Fen:
     def __init__(self, outputImgPath = '../img'):
-        self.outputImgPath = outputImgPath
+        # 获取当前脚本所在的绝对路径
+        scriptDir = os.path.dirname(os.path.realpath(__file__))
+        # 根据当前脚本的绝对路径生成输出目录
+        self.outputImgPath = os.path.abspath(os.path.join(scriptDir, outputImgPath))
+        
         self.lstNameMap = {
             "红仕": "a",
             "红帅": "k",
@@ -27,6 +31,17 @@ class Img2Fen:
         if os.path.exists(self.outputImgPath):
             print('已存在', self.outputImgPath)
             print('如果想重新生成，请删除该文件夹')
+
+            # 必须有如下文件，否则无法识别
+            filenameList = [
+                '红车.jpg' , '红帅.jpg' , '红马.jpg' , '红炮.jpg' , '红仕.jpg' , '红相.jpg' , '红兵.jpg', 
+                '黑车.jpg' , '黑将.jpg' , '黑马.jpg' , '黑炮.jpg' , '黑士.jpg' , '黑象.jpg' , '黑卒.jpg'
+            ]
+            self.data = []
+            for f in filenameList:
+                img2 = cv2.imdecode(np.fromfile(os.path.join(self.outputImgPath, f), dtype=np.uint8), -1)
+                self.data.append({f: img2})
+
             return
 
         os.makedirs(self.outputImgPath)
@@ -41,11 +56,8 @@ class Img2Fen:
         print('请将棋子图片分辨，并改名为类似：')
         print('红仕.jpg        红帅.jpg        红相.jpg        红马.jpg        黑士.jpg        黑炮.jpg        黑车.jpg')
 
-    def getLstNameAndLstRect(self, imgPath="/Users/u03013112/Downloads/cc2.png"):
-        img = cv2.imread(imgPath)
+    def getLstNameAndLstRect(self, img):
         imgSrc = img.copy()
-        img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
-        imgSrc = cv2.resize(imgSrc, (imgSrc.shape[1] // 2, imgSrc.shape[0] // 2))
         _, circles = self.detectCircle(img, 50, 20, 50)
         dst, lstRect = self.getRect(imgSrc, circles)
         lstName = self.getChessName(dst, lstRect)
@@ -103,8 +115,10 @@ class Img2Fen:
             img = imgSrc[y1:y2, x1:x2]
             lstSim = []
             colorSim = []
-            for f in os.listdir(self.outputImgPath):
-                img2 = cv2.imdecode(np.fromfile(os.path.join(self.outputImgPath, f), dtype=np.uint8), -1)
+            for d in self.data:
+                f = list(d.keys())[0]
+                img2 = d[f]
+
                 sim = self.compareFeature(img, img2)
                 lstSim.append({f: sim})
                 hist1 = self.extractColorHistogram(img)
@@ -122,8 +136,11 @@ class Img2Fen:
 
         return lstName
 
-    def getFenFromImg(self, imgPath="/Users/u03013112/Downloads/cc2.png"):
-        lstName, lstRect = self.getLstNameAndLstRect(imgPath)
+    def getFenFromImg(self, img):
+        # 标准分辨率会比较大，缩小一倍不影响识别，并且会加快识别速度
+        img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
+
+        lstName, lstRect = self.getLstNameAndLstRect(img)
 
         if self.boardPosition is None:
             boardX1, boardY1 = min([(x1 + x2) // 2 for x1, _, x2, _ in lstRect]), min([(y1 + y2) // 2 for _, y1, _, y2 in lstRect])
@@ -165,5 +182,7 @@ class Img2Fen:
 
 if __name__ == '__main__':
     img2fen = Img2Fen()
-    fen = img2fen.getFenFromImg()
+    img2fen.init()
+    img = cv2.imread('/Users/u03013112/Downloads/cc2.png')
+    fen = img2fen.getFenFromImg(img)
     print(fen)
