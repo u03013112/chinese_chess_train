@@ -80,11 +80,29 @@ class Img2Fen:
             x1,y1,x2,y2=xy
             cv2.imwrite(self.outputImgPath+"/chess"+str(i+1)+".jpg",img[y1:y2,x1:x2])
 
+
+    def extract_color_histogram(self,image, bins=(8, 8, 8)):
+        # 将图像从BGR转换到HSV颜色空间
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+        # 计算3D颜色直方图
+        hist = cv2.calcHist([hsv], [0, 1, 2], None, bins, [0, 180, 0, 256, 0, 256])
+
+        # 归一化直方图
+        cv2.normalize(hist, hist)
+
+        # 返回展平的颜色直方图
+        return hist.flatten()
+
+    def compare_histograms(self,hist1, hist2):
+        # 使用相关性（Correlation）方法比较两个颜色直方图
+        return cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
+
     def compare_feature(self,img1,img2):
-        sift=cv2.xfeatures2d.SIFT_create()
-        kp1,des1=sift.detectAndCompute(img1,None)
-        kp2,des2=sift.detectAndCompute(img2,None)
-        bf=cv2.BFMatcher()
+        sift = cv2.SIFT_create()
+        kp1,des1 = sift.detectAndCompute(img1,None)
+        kp2,des2 = sift.detectAndCompute(img2,None)
+        bf = cv2.BFMatcher()
         matches=bf.knnMatch(des1,des2,k=2)
         good=[]
         for m,n in matches:
@@ -98,13 +116,25 @@ class Img2Fen:
             x1,y1,x2,y2=xy
             img=imgsrc[y1:y2,x1:x2]
             lstsim=[]
+            colorSim = []
             for f in os.listdir(self.outputImgPath):
                 img2=cv2.imdecode(np.fromfile(os.path.join(self.outputImgPath,f),dtype=np.uint8),-1)
                 sim=self.compare_feature(img,img2)
                 lstsim.append({f:sim})
+                # 
+                hist1 = self.extract_color_histogram(img)
+                hist2 = self.extract_color_histogram(img2)
+                csim = self.compare_histograms(hist1, hist2)
+                colorSim.append({f:csim})
+                
             lstsim.sort(key=lambda x:x[list(x.keys())[0]],reverse=True)
-            chessname=list(lstsim[0].keys())[0].split(".")[0]
+            colorSim.sort(key=lambda x:x[list(x.keys())[0]],reverse=True)
+            chessTypeName = list(lstsim[0].keys())[0].split(".")[0][1]
+            chessColorName = list(colorSim[0].keys())[0].split(".")[0][0]
+            chessname = chessColorName + chessTypeName
+
             lstname.append(chessname)
+
         return lstname
     
     def getFenFromImg(self, imgpath="/Users/u03013112/Downloads/cc2.png"):
