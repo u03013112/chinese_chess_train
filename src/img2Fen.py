@@ -211,35 +211,34 @@ class Img2Fen:
 
 
     def getFenFromImg(self, img):
-        print('shape1:',img.shape)
         # 标准分辨率会比较大，缩小一倍不影响识别，并且会加快识别速度
         img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
-        print('shape2:',img.shape)
 
         lstName, lstRect = self.getLstNameAndLstRect(img)
 
         # print(lstName)
         # print(lstRect)
 
-        cv2.imshow('debug', img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.imshow('debug', img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
 
-        # 找到 红车 与 黑车 的位置，以此确定棋盘的位置
-        rRectList = []
-        for i in range(len(lstName)):
-            if lstName[i] == '红车':
-                rRectList.append(lstRect[i])
-            if lstName[i] == '黑车':
-                rRectList.append(lstRect[i])
-
-        if len(rRectList) != 4:
-            print('未找到红车和黑车')
-            return ''
+        
 
         if self.boardPosition is None:
-            boardX1, boardY1 = min([(x1 + x2) // 2 for x1, _, x2, _ in lstRect]), min([(y1 + y2) // 2 for _, y1, _, y2 in lstRect])
-            boardX2, boardY2 = max([(x1 + x2) // 2 for x1, _, x2, _ in lstRect]), max([(y1 + y2) // 2 for _, y1, _, y2 in lstRect])
+            # 找到 红车 与 黑车 的位置，以此确定棋盘的位置
+            rRectList = []
+            for i in range(len(lstName)):
+                if lstName[i] == '红车':
+                    rRectList.append(lstRect[i])
+                if lstName[i] == '黑车':
+                    rRectList.append(lstRect[i])
+
+            if len(rRectList) != 4:
+                print('未找到红车和黑车')
+                return ''
+            boardX1, boardY1 = min([(x1 + x2) // 2 for x1, _, x2, _ in rRectList]), min([(y1 + y2) // 2 for _, y1, _, y2 in rRectList])
+            boardX2, boardY2 = max([(x1 + x2) // 2 for x1, _, x2, _ in rRectList]), max([(y1 + y2) // 2 for _, y1, _, y2 in rRectList])
             self.boardPosition = (boardX1, boardY1, boardX2, boardY2)
         else:
             boardX1, boardY1, boardX2, boardY2 = self.boardPosition
