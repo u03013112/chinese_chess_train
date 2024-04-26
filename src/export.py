@@ -86,13 +86,31 @@ class ChessGui(tk.Tk):
         
     def exportFen(self):
         img = self.getScreen()
-        fen = self.img2fen.getFenFromImg(img)
-        if not self.fenList or fen != self.fenList[-1]:
-            print(fen)
-            # self.updateText(self.debugFen(fen))
-            self.chessBoard.readFen(fen)
-            self.fenList.append(fen)
-        self.after_id = self.after(100, self.exportFen)
+        try:
+            fen = self.img2fen.getFenFromImg(img)
+            if not self.fenList or fen != self.fenList[-1]:
+                print(fen)
+                if len(self.fenList) > 0:
+                    lastFen = self.fenList[-1]
+                    if fen != lastFen:
+                        try:
+                            move = self.getMove(lastFen, fen)
+                        except ValueError as e:
+                            # 解决各种异常，比如由于各种问题导致的棋盘检测失败
+                            print(e)
+                        else:
+                            print(move)        
+                            self.chessBoard.readFen(fen)
+                            self.fenList.append(fen)
+                else:
+                    self.chessBoard.readFen(fen)
+                    self.fenList.append(fen)
+        except Exception as e:
+            pass
+        
+        stepCount = len(self.fenList) - 1 if len(self.fenList) > 0 else 0
+        self.updateText(f'目前是第{stepCount}步。')
+        self.after_id = self.after(10, self.exportFen)
 
     def endExport(self):
         if self.after_id:
