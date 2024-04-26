@@ -49,11 +49,11 @@ class ChessGui(tk.Tk):
         self.btnEnd.pack(pady=5)
 
     def detectBoard(self):
-        if messagebox.askokcancel('提示', "请将《天天象棋》游戏界面尽量不缩小，棋盘不要被遮挡，并且保持开局状态。"):
-            # img = ImageGrab.grab()
-            # imgNp = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-            # img.save('screen.png')
-            imgNp = cv2.imread('screen.png')
+        # if messagebox.askokcancel('提示', "请将《天天象棋》游戏界面尽量不缩小，棋盘不要被遮挡，并且保持开局状态。"):
+            img = ImageGrab.grab()
+            imgNp = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+            # 去掉下面工具条，大约200像素
+            imgNp = imgNp[:-200, :, :]
 
             fen = self.img2fen.getFenFromImg(imgNp)
             if fen in ["rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR",

@@ -87,9 +87,9 @@ class Img2Fen:
             x1, y1, x2, y2 = xy
             cv2.imwrite(self.outputImgPath + "/chess" + str(i + 1) + ".jpg", img[y1:y2, x1:x2])
 
-    def extractColorHistogram(self, image, bins=(8, 8, 8)):
-        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        hist = cv2.calcHist([hsv], [0, 1, 2], None, bins, [0, 180, 0, 256, 0, 256])
+    def extractColorHistogram(self, image, bins=(16, 16, 16)):
+        # hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        hist = cv2.calcHist([image], [0, 1, 2], None, bins, [0, 180, 0, 256, 0, 256])
         cv2.normalize(hist, hist)
         return hist.flatten()
 
@@ -108,39 +108,18 @@ class Img2Fen:
                 good.append([m])
         return len(good)
 
-    # def getChessName(self, imgSrc, lstRect):
-    #     lstName = [] 
-    #     for xy in lstRect:
-    #         x1, y1, x2, y2 = xy
-    #         img = imgSrc[y1:y2, x1:x2]
-    #         lstSim = []
-    #         colorSim = []
-    #         for d in self.data:
-    #             f = list(d.keys())[0]
-    #             img2 = d[f]
+    def extract_center_color(self,img):
+        h, w, _ = img.shape
+        a = 2
+        center = (int(w/2), int(h/2))
+        square = img[center[1]-int(a):center[1]+int(a), center[0]-int(a):center[0]+int(a)]
+        return np.mean(np.mean(square, axis=0), axis=0)
 
-    #             sim = self.compareFeature(img, img2)
-    #             lstSim.append({f: sim})
-    #             hist1 = self.extractColorHistogram(img)
-    #             hist2 = self.extractColorHistogram(img2)
-    #             cSim = self.compareHistograms(hist1, hist2)
-    #             colorSim.append({f: cSim})
+    def compare_color(self,color1, color2):
+        return np.sqrt(np.sum((color1 - color2) ** 2))
 
-    #         lstSim.sort(key=lambda x: x[list(x.keys())[0]], reverse=True)
-    #         colorSim.sort(key=lambda x: x[list(x.keys())[0]], reverse=True)
-    #         chessTypeName = list(lstSim[0].keys())[0].split(".")[0][1]
-    #         chessColorName = list(colorSim[0].keys())[0].split(".")[0][0]
-    #         chessName = chessColorName + chessTypeName
-
-
-    #         print(chessName)
-    #         print(lstSim)
-    #         print(colorSim)
-    #         print('-------------------')
-
-    #         lstName.append(chessName)
-
-    #     return lstName
+    def compare_color2(self,color1, color2):
+        return abs(color1[0] - color2[0]) + abs(color1[1] - color2[1]) + abs(color1[2] - color2[2])
 
     def getChessName(self, imgSrc, lstRect):
         lstName = [] 
@@ -158,32 +137,73 @@ class Img2Fen:
             lstSim.sort(key=lambda x: x[list(x.keys())[0]], reverse=True)
             chessTypeName = list(lstSim[0].keys())[0].split(".")[0][1]
             chessColorName = list(lstSim[0].keys())[0].split(".")[0][0]
+            
+            # if list(lstSim[0].keys())[0][1] in ['车', '马', '炮']:
+            #     color = self.extract_center_color(img)
+            #     if color[0] < 100 and color[1] < 100 and color[2] < 100:
+            #         chessColorName = '黑'
+            #     else:
+            #         chessColorName = '红'
+            #     # print(lstSim)
+            #     # print('进入颜色比对')
+            #     # colorSim = []
+            #     # for f in self.data:
+            #     #     g = list(f.keys())[0]
+            #     #     if g != list(lstSim[0].keys())[0] and g != list(lstSim[1].keys())[0]:
+            #     #         continue
+            #     #     img2 = f[g]
 
-            # 如果特征相似度前两位结果比较相似，并且只是颜色有差异，则进入颜色比对
-            if abs(list(lstSim[0].values())[0] - list(lstSim[1].values())[0]) < 3 \
-                and list(lstSim[0].keys())[0][1:] == list(lstSim[1].keys())[0][1:]:
-                print(lstSim)
-                print('进入颜色比对')
-                colorSim = []
-                for f in self.data:
-                    g = list(f.keys())[0]
-                    if g != list(lstSim[0].keys())[0] and g != list(lstSim[1].keys())[0]:
-                        continue
-                    img2 = f[g]
-                    hist1 = self.extractColorHistogram(img)
-                    hist2 = self.extractColorHistogram(img2)
-                    cSim = self.compareHistograms(hist1, hist2)
-                    colorSim.append({g: cSim})
-                colorSim.sort(key=lambda x: x[list(x.keys())[0]], reverse=True)
-                chessColorName = list(colorSim[0].keys())[0].split(".")[0][0]
+            #     #     color1 = self.extract_center_color(img)
+            #     #     color2 = self.extract_center_color(img2)
+            #     #     cSim = self.compare_color2(color1, color2)
 
+            #     #     if list(lstSim[0].keys())[0][1] == '炮':
+                        
+
+            #     #         print('颜色1:', color1)
+            #     #         print('颜色2:', color2)
+            #     #         print('颜色相似度:', cSim)
+
+            #     #         img2 = cv2.resize(img2, (img.shape[1], img.shape[0]))
+
+            #     #         # 再将color1和color2画出来，分辨率与img一致
+            #     #         img3 = np.zeros_like(img)
+            #     #         img3[:, :] = color1
+
+            #     #         img4 = np.zeros_like(img2)
+            #     #         img4[:, :] = color2
+
+            #     #         # 创建一个新的图像，大小为原始图像的两倍
+            #     #         combined_img = np.zeros((img.shape[0] * 2, img.shape[1] * 2, 3), dtype=np.uint8)
+
+            #     #         # 将四个图像放入新创建的图像中
+            #     #         combined_img[0:img.shape[0], 0:img.shape[1]] = img
+            #     #         combined_img[0:img.shape[0], img.shape[1]:] = img2
+            #     #         combined_img[img.shape[0]:, 0:img.shape[1]] = img3
+            #     #         combined_img[img.shape[0]:, img.shape[1]:] = img4
+
+            #     #         # 使用cv2.imshow显示合并后的图像
+            #     #         cv2.imshow('Combined Image', combined_img)
+            #     #         cv2.waitKey(0)
+            #     #         cv2.destroyAllWindows()
+
+                        
+
+                    
+            #     #     colorSim.append({g: cSim})
+            #     # colorSim.sort(key=lambda x: x[list(x.keys())[0]], reverse=False)
+            #     # chessColorName = list(colorSim[0].keys())[0].split(".")[0][0]
+            #     # print(colorSim)
+            #     # print('最终颜色:', chessColorName)
+            #     # print('-------------------')
+            
             chessName = chessColorName + chessTypeName
 
-            print(chessName)
-            print(lstSim)
-            if 'colorSim' in locals():
-                print(colorSim)
-            print('-------------------')
+            # print(chessName)
+            # print(lstSim)
+            # if 'colorSim' in locals():
+            #     print(colorSim)
+            # print('-------------------')
 
             lstName.append(chessName)
 
@@ -201,17 +221,21 @@ class Img2Fen:
         # print(lstName)
         # print(lstRect)
 
-        # # 找到 红车 与 黑车 的位置，以此确定棋盘的位置
-        # rRectList = []
-        # for i in range(len(lstName)):
-        #     if lstName[i] == '红车':
-        #         rRectList.append(lstRect[i])
-        #     if lstName[i] == '黑车':
-        #         rRectList.append(lstRect[i])
+        cv2.imshow('debug', img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
-        # if len(rRectList) != 4:
-        #     print('未找到红车和黑车')
-        #     return ''
+        # 找到 红车 与 黑车 的位置，以此确定棋盘的位置
+        rRectList = []
+        for i in range(len(lstName)):
+            if lstName[i] == '红车':
+                rRectList.append(lstRect[i])
+            if lstName[i] == '黑车':
+                rRectList.append(lstRect[i])
+
+        if len(rRectList) != 4:
+            print('未找到红车和黑车')
+            return ''
 
         if self.boardPosition is None:
             boardX1, boardY1 = min([(x1 + x2) // 2 for x1, _, x2, _ in lstRect]), min([(y1 + y2) // 2 for _, y1, _, y2 in lstRect])
@@ -221,10 +245,10 @@ class Img2Fen:
             boardX1, boardY1, boardX2, boardY2 = self.boardPosition
 
         # debug 将棋盘画出来
-        cv2.rectangle(img, (boardX1, boardY1), (boardX2, boardY2), (0, 255, 0), 2)
-        cv2.imshow('debug', img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.rectangle(img, (boardX1, boardY1), (boardX2, boardY2), (0, 255, 0), 2)
+        # cv2.imshow('debug', img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
 
         cellWidth = (boardX2 - boardX1) // 8
         cellHeight = (boardY2 - boardY1) // 9
@@ -264,14 +288,8 @@ if __name__ == '__main__':
     # imgNp = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
     # imgNp.save('screen.png')
     img2fen = Img2Fen()
-    img2fen.init()
-    img1 = cv2.imread('screen.png')
-    img1 = img1[:-238]
-    # img1 = cv2.cvtColor(np.array(img1), cv2.COLOR_RGB2BGR)
+    img2fen.init('cc3.png')
 
-    img2 = cv2.imread('/Users/u03013112/Downloads/cc2.png')
-    print(img1.shape)
-    print(img2.shape)
-    
+    img1 = cv2.imread('cc3.png')    
     fen = img2fen.getFenFromImg(img1)
     print(fen)
