@@ -26,12 +26,13 @@ from PIL import ImageGrab
 from img2Fen import Img2Fen
 import cv2
 import numpy as np
+from ChessBoard import ChessBoard
 
 class ChessGui(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title('棋谱导出')
-        self.geometry('500x200')  # 增加窗口宽度以适应更长的文本
+        self.geometry('500x400')  # 增加窗口宽度以适应更长的文本
         self.initUI()
         self.img2fen = Img2Fen()
         self.img2fen.init()
@@ -40,15 +41,21 @@ class ChessGui(tk.Tk):
 
     def initUI(self):
         self.btnDetect = tk.Button(self, text='检测棋盘', command=self.detectBoard)
-        self.btnDetect.pack(pady=5)
+        self.btnDetect.grid(row=0, column=0, pady=5)
+
         self.btnStart = tk.Button(self, text='开始导出', command=self.startExport)
-        self.btnStart.pack(pady=5)
+        self.btnStart.grid(row=1, column=0, pady=5)
+
         self.btnEnd = tk.Button(self, text='结束导出', command=self.endExport)
-        self.btnEnd.pack(pady=5)
+        self.btnEnd.grid(row=2, column=0, pady=5)
 
         # 添加一个Label组件来显示文本
-        self.textLabel = tk.Label(self, text='', width=80)  # 设置足够的宽度以适应更长的文本
-        self.textLabel.pack()
+        self.textLabel = tk.Label(self, text='1234567890', width=20)  # 设置足够的宽度以适应更长的文本
+        self.textLabel.grid(row=3, column=0)
+
+        # 添加ChessBoard到界面中
+        self.chessBoard = ChessBoard(self, width=300, height=350)
+        self.chessBoard.grid(row=0, column=1, rowspan=4)
     
     def updateText(self, text):
         # 更新Label组件的文本
@@ -69,7 +76,8 @@ class ChessGui(tk.Tk):
             fen = self.img2fen.getFenFromImg(img)
             if fen in ["rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR",
                         "RNBAKABNR/9/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr"]:
-                messagebox.showinfo('提示', "棋盘检测成功，点击开始导出按钮，开始导出棋谱。")
+                # messagebox.showinfo('提示', "棋盘检测成功，点击开始导出按钮，开始导出棋谱。")
+                self.updateText('棋盘检测成功，点击开始导出按钮，开始导出棋谱。')
             else:
                 messagebox.showwarning('提示', "棋盘检测失败，请重试。\n请将《天天象棋》游戏界面尽量不缩小，棋盘不要被遮挡，并且保持开局状态。")
 
@@ -81,7 +89,8 @@ class ChessGui(tk.Tk):
         fen = self.img2fen.getFenFromImg(img)
         if not self.fenList or fen != self.fenList[-1]:
             print(fen)
-            self.updateText(fen)
+            # self.updateText(self.debugFen(fen))
+            self.chessBoard.readFen(fen)
             self.fenList.append(fen)
         self.after_id = self.after(100, self.exportFen)
 
@@ -143,14 +152,26 @@ class ChessGui(tk.Tk):
         move = col_labels[move_from % 9] + row_labels[move_from // 10] + col_labels[move_to % 9] + row_labels[move_to // 10]
         return move
 
+def debug():
+    app = ChessGui()
+    with open('20240426233230.txt', 'r') as f:
+        content = f.read()
+        fenList = content.split('\n')
+        # print(fenList)
+    
+    for i in range(len(fenList) - 1):
+        fen1 = fenList[i]
+        fen2 = fenList[i + 1]
+        print(fen1)
+        print(fen2)
+        print(app.getMove(fen1, fen2))
 
 if __name__ == '__main__':
     app = ChessGui()
-    # app.mainloop()
-    fen1 = 'rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR'
-    fen2 = 'rnbakabnr/9/1c2c4/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR'
-    
-    print(app.debugFen(fen1))
-    print(app.debugFen(fen2))
+    app.mainloop()
 
-    print(app.getMove(fen1, fen2))
+    # debug()
+
+
+    
+    
