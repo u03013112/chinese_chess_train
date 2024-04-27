@@ -37,6 +37,7 @@ class ChessGui(tk.Tk):
         self.img2fen = Img2Fen()
         self.img2fen.init()
         self.fenList = []
+        self.moveList = []
         self.after_id = None
 
     def initUI(self):
@@ -87,7 +88,6 @@ class ChessGui(tk.Tk):
         
     def exportFen(self):
         img = self.getScreen()
-        move = ''
         try:
             fen = self.img2fen.getFenFromImg(img)
             if not self.fenList or fen != self.fenList[-1]:
@@ -96,12 +96,21 @@ class ChessGui(tk.Tk):
                     lastFen = self.fenList[-1]
                     if fen != lastFen:
                         try:
-                            move = self.getMove(lastFen, fen)
+                            p,move = self.getMove(lastFen, fen)
                         except ValueError as e:
                             # 解决各种异常，比如由于各种问题导致的棋盘检测失败
                             print(e)
                         else:
-                            print(move)        
+                            # 记录行动的棋子与行动
+                            print(p,move)
+                            self.moveList.append({'p': p, 'move': move})
+                            # 判断是否是同一个棋子连续行动，如果是，需要合并
+                            if len(self.moveList) > 1 and self.moveList[-1]['p'] == self.moveList[-2]['p']:
+                                self.moveList[-2]['move'] += move
+                                self.moveList.pop()
+                                # self.fenList 也需要做相应处理，将最后一个fen去掉
+                                self.fenList.pop()
+
                             self.chessBoard.readFen(fen)
                             self.fenList.append(fen)
                             stepCount = len(self.fenList) - 1 if len(self.fenList) > 0 else 0
@@ -133,7 +142,7 @@ class ChessGui(tk.Tk):
         fen = '\n'.join(reversed(fen_lines))
         return fen
 
-    def getMove(self, lastFen, fen):
+    def getMove(self, lastFen, fen, debug=False):
         def expand_fen(fen):
             expanded = []
             for char in fen:
@@ -167,14 +176,23 @@ class ChessGui(tk.Tk):
         if diff_count != 2:
             return None
 
-        # print(''.join(lastFen))
-        # print(''.join(fen))
-        # print(move_from, move_to)
+        pLast = lastFen[move_from]
+        p = fen[move_to]
+
+        if debug:
+            print(''.join(lastFen))
+            print(''.join(fen))
+            print('p last:', pLast)
+            print('p:', p)
+
+        # 按照中国象棋的规则，棋子是不能凭空消失的，pLast 与 p 必须相同
+        if pLast != p:
+            raise None
 
         col_labels = 'abcdefghi'
         row_labels = '0123456789'
         move = col_labels[move_from % 9] + row_labels[move_from // 9] + col_labels[move_to % 9] + row_labels[move_to // 9]
-        return move
+        return p,move
 
 def debug():
     app = ChessGui()
@@ -192,9 +210,13 @@ def debug():
 
 def debug2():
     app = ChessGui()
-    fen1 = 'rnbakabnr/9/1c2c4/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR'
-    fen2 = 'rnbakabnr/9/1c2c4/p1p1p1p1p/9/9/P1P1P1P1P/1C2C4/9/RNBAKABNR'
-    print(app.getMove(fen1, fen2))
+#     2bk1abr1/9/3c2n2/p3C3p/6P2/3p5/P3P3P/3K1AN2/9/c1rn1AB2
+# c e2d2
+# 2bk1abr1/9/3n2n2/p7p/6P2/3p5/P3P3P/3K1AN2/9/c1rn1AB2
+# C e3d2
+    fen1 = '2bk1abr1/9/3c2n2/p3C3p/6P2/3p5/P3P3P/3K1AN2/9/c1rn1AB2'
+    fen2 = '2bk1abr1/9/3n2n2/p7p/6P2/3p5/P3P3P/3K1AN2/9/c1rn1AB2'
+    print(app.getMove(fen1, fen2, debug=True))
 
 
 if __name__ == '__main__':
