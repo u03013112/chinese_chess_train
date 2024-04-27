@@ -4,12 +4,13 @@ class ChessBoard(tk.Canvas):
     def __init__(self, master=None, w=30, **kwargs):
         super().__init__(master, **kwargs)
         self.w = w  # 棋盘格子的大小
-        self.draw_board()
         
-    def draw_board(self):
+    def draw_board(self, style=1):
         # 画棋盘
         for i in range(10):
             self.create_line(self.w, self.w + i * self.w, 9 * self.w, self.w + i * self.w)
+            if style == 2:
+                self.create_text(self.w * 0.4, self.w * (i + 1), text=str(9-i), font=('Arial', 10))
         for i in range(9):
             if i == 0 or i == 8:  # 画边界线
                 self.create_line(self.w + i * self.w, self.w, self.w + i * self.w, 10 * self.w)
@@ -17,15 +18,21 @@ class ChessBoard(tk.Canvas):
                 self.create_line(self.w + i * self.w, self.w, self.w + i * self.w, 5 * self.w)
                 self.create_line(self.w + i * self.w, 6 * self.w, self.w + i * self.w, 10 * self.w)
 
-            # 添加数字
-            self.create_text(self.w * (i + 1), self.w * 0.4, text=str(i + 1), font=('Arial', 10))
-            self.create_text(self.w * (i + 1), self.w * 10.6, text=str(9 - i), font=('Arial', 10))
-            
+            # 添加坐标
+            if style == 1:
+                self.create_text(self.w * (i + 1), self.w * 0.4, text=str(i + 1), font=('Arial', 10))
+                self.create_text(self.w * (i + 1), self.w * 10.6, text=str(9 - i), font=('Arial', 10))
+            elif style == 2:
+                self.create_text(self.w * (i + 1), self.w * 10.6, text=chr(ord('a') + i), font=('Arial', 10))
+                
+
         # 画九宫格
         self.create_line(4 * self.w, self.w, 6 * self.w, 3 * self.w)
         self.create_line(4 * self.w, 3 * self.w, 6 * self.w, self.w)
         self.create_line(4 * self.w, 8 * self.w, 6 * self.w, 10 * self.w)
         self.create_line(4 * self.w, 10 * self.w, 6 * self.w, 8 * self.w)
+
+
 
     def draw_piece(self, x, y, color, text):
         a = int(self.w*0.9/2)
@@ -94,10 +101,12 @@ class ChessGui(tk.Tk):
     def initUI(self):
         self.board = ChessBoard(self, width=600, height=600)
         self.board.pack()
+        self.board.draw_board(style=2)
         # self.board.place_piece('a0', '红', '车')
         # self.board.place_piece('b0', '黑', '马')
         self.board.readFen('rnbakabnr/9/1c2c4/p1p1p1p1p/9/9/P1P1P1P1P/1C2C4/9/RNBAKABNR')
 
 
-# app = ChessGui()
-# app.mainloop()
+if __name__ == '__main__':
+    app = ChessGui()
+    app.mainloop()

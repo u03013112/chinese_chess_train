@@ -55,6 +55,7 @@ class ChessGui(tk.Tk):
 
         # 添加ChessBoard到界面中
         self.chessBoard = ChessBoard(self, width=300, height=350)
+        self.chessBoard.draw_board(style=2)
         self.chessBoard.grid(row=0, column=1, rowspan=4)
     
     def updateText(self, text):
@@ -86,6 +87,7 @@ class ChessGui(tk.Tk):
         
     def exportFen(self):
         img = self.getScreen()
+        move = ''
         try:
             fen = self.img2fen.getFenFromImg(img)
             if not self.fenList or fen != self.fenList[-1]:
@@ -102,14 +104,14 @@ class ChessGui(tk.Tk):
                             print(move)        
                             self.chessBoard.readFen(fen)
                             self.fenList.append(fen)
+                            stepCount = len(self.fenList) - 1 if len(self.fenList) > 0 else 0
+                            self.updateText(f'目前是第{stepCount}步。{move}')
                 else:
                     self.chessBoard.readFen(fen)
                     self.fenList.append(fen)
         except Exception as e:
             pass
         
-        stepCount = len(self.fenList) - 1 if len(self.fenList) > 0 else 0
-        self.updateText(f'目前是第{stepCount}步。')
         self.after_id = self.after(10, self.exportFen)
 
     def endExport(self):
@@ -165,9 +167,13 @@ class ChessGui(tk.Tk):
         if diff_count != 2:
             return None
 
+        # print(''.join(lastFen))
+        # print(''.join(fen))
+        # print(move_from, move_to)
+
         col_labels = 'abcdefghi'
         row_labels = '0123456789'
-        move = col_labels[move_from % 9] + row_labels[move_from // 10] + col_labels[move_to % 9] + row_labels[move_to // 10]
+        move = col_labels[move_from % 9] + row_labels[move_from // 9] + col_labels[move_to % 9] + row_labels[move_to // 9]
         return move
 
 def debug():
@@ -184,11 +190,18 @@ def debug():
         print(fen2)
         print(app.getMove(fen1, fen2))
 
+def debug2():
+    app = ChessGui()
+    fen1 = 'rnbakabnr/9/1c2c4/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR'
+    fen2 = 'rnbakabnr/9/1c2c4/p1p1p1p1p/9/9/P1P1P1P1P/1C2C4/9/RNBAKABNR'
+    print(app.getMove(fen1, fen2))
+
+
 if __name__ == '__main__':
     app = ChessGui()
     app.mainloop()
 
-    # debug()
+    # debug2()
 
 
     
