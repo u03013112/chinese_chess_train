@@ -40,6 +40,18 @@ class ChessGui(tk.Tk):
         self.moveList = []
         self.after_id = None
 
+        # 用于计算运行效率
+        self.timer = None
+        self.getScreenCount = 0
+    
+    def timeCheck(self):
+        if self.timer == None or time.time() - self.timer > 1:
+            self.timer = time.time()
+            print(f'getScreenCount: {self.getScreenCount}')
+            self.getScreenCount = 0
+            
+        self.after(10, self.timeCheck)
+        
     def initUI(self):
         self.btnDetect = tk.Button(self, text='检测棋盘', command=self.detectBoard)
         self.btnDetect.grid(row=0, column=0, pady=5)
@@ -64,6 +76,7 @@ class ChessGui(tk.Tk):
         self.textLabel.config(text=text)
 
     def getScreen(self):
+        self.getScreenCount += 1
         img = ImageGrab.grab()
         imgNp = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
         # 去掉下面工具条，大约200像素
@@ -85,11 +98,14 @@ class ChessGui(tk.Tk):
 
     def startExport(self):
         self.exportFen()
+        self.timeCheck()
         
     def exportFen(self):
         img = self.getScreen()
+        startTime = time.time()
         try:
             fen = self.img2fen.getFenFromImg(img)
+            print(f'getFenFromImg time: {time.time() - startTime}')
             if not self.fenList or fen != self.fenList[-1]:
                 print(fen)
                 if len(self.fenList) > 0:

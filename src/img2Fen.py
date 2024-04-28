@@ -1,5 +1,6 @@
 import cv2
 import os
+import time
 import numpy as np
 
 class Img2Fen:
@@ -25,6 +26,7 @@ class Img2Fen:
             "黑象": "B",
             "黑马": "N"
         }
+        self.boardRect = None
         self.boardPosition = None
 
     def init(self, imgPath="/Users/u03013112/Downloads/cc2.png"):
@@ -97,6 +99,10 @@ class Img2Fen:
         return cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
 
     def compareFeature(self, img1, img2):
+        # 将图片缩小，加快特征提取速度
+        img1 = cv2.resize(img1, (img1.shape[1] // 2, img1.shape[0] // 2))
+        img2 = cv2.resize(img2, (img2.shape[1] // 2, img2.shape[0] // 2))
+
         sift = cv2.SIFT_create()
         kp1, des1 = sift.detectAndCompute(img1, None)
         kp2, des2 = sift.detectAndCompute(img2, None)
@@ -122,99 +128,90 @@ class Img2Fen:
         return abs(color1[0] - color2[0]) + abs(color1[1] - color2[1]) + abs(color1[2] - color2[2])
 
     def getChessName(self, imgSrc, lstRect):
+        
         lstName = [] 
+        
+        # 等待比对的图片列表，限制匹配数量，加速
+        dataList = []
+        for d1 in self.data:
+            f = list(d1.keys())[0]
+            img2 = d1[f]
+            count = 2
+            if f == '红帅.jpg' or f == '黑将.jpg':
+                count = 1
+            if f == '红兵.jpg' or f == '黑卒.jpg':
+                count = 5
+
+            dataList.append({'f': f, 'img': img2, 'count': count})
+
         for xy in lstRect:
             x1, y1, x2, y2 = xy
             img = imgSrc[y1:y2, x1:x2]
             lstSim = []
-            for d in self.data:
-                f = list(d.keys())[0]
-                img2 = d[f]
-
+            
+            for data in dataList:
+                if data['count'] == 0:
+                    continue
+                f = data['f']
+                img2 = data['img']
                 sim = self.compareFeature(img, img2)
                 lstSim.append({f: sim})
-
+            if len(lstSim) == 0:
+                break
             lstSim.sort(key=lambda x: x[list(x.keys())[0]], reverse=True)
-            chessTypeName = list(lstSim[0].keys())[0].split(".")[0][1]
-            chessColorName = list(lstSim[0].keys())[0].split(".")[0][0]
-            
-            # if list(lstSim[0].keys())[0][1] in ['车', '马', '炮']:
-            #     color = self.extract_center_color(img)
-            #     if color[0] < 100 and color[1] < 100 and color[2] < 100:
-            #         chessColorName = '黑'
-            #     else:
-            #         chessColorName = '红'
-            #     # print(lstSim)
-            #     # print('进入颜色比对')
-            #     # colorSim = []
-            #     # for f in self.data:
-            #     #     g = list(f.keys())[0]
-            #     #     if g != list(lstSim[0].keys())[0] and g != list(lstSim[1].keys())[0]:
-            #     #         continue
-            #     #     img2 = f[g]
-
-            #     #     color1 = self.extract_center_color(img)
-            #     #     color2 = self.extract_center_color(img2)
-            #     #     cSim = self.compare_color2(color1, color2)
-
-            #     #     if list(lstSim[0].keys())[0][1] == '炮':
-                        
-
-            #     #         print('颜色1:', color1)
-            #     #         print('颜色2:', color2)
-            #     #         print('颜色相似度:', cSim)
-
-            #     #         img2 = cv2.resize(img2, (img.shape[1], img.shape[0]))
-
-            #     #         # 再将color1和color2画出来，分辨率与img一致
-            #     #         img3 = np.zeros_like(img)
-            #     #         img3[:, :] = color1
-
-            #     #         img4 = np.zeros_like(img2)
-            #     #         img4[:, :] = color2
-
-            #     #         # 创建一个新的图像，大小为原始图像的两倍
-            #     #         combined_img = np.zeros((img.shape[0] * 2, img.shape[1] * 2, 3), dtype=np.uint8)
-
-            #     #         # 将四个图像放入新创建的图像中
-            #     #         combined_img[0:img.shape[0], 0:img.shape[1]] = img
-            #     #         combined_img[0:img.shape[0], img.shape[1]:] = img2
-            #     #         combined_img[img.shape[0]:, 0:img.shape[1]] = img3
-            #     #         combined_img[img.shape[0]:, img.shape[1]:] = img4
-
-            #     #         # 使用cv2.imshow显示合并后的图像
-            #     #         cv2.imshow('Combined Image', combined_img)
-            #     #         cv2.waitKey(0)
-            #     #         cv2.destroyAllWindows()
-
-                        
-
-                    
-            #     #     colorSim.append({g: cSim})
-            #     # colorSim.sort(key=lambda x: x[list(x.keys())[0]], reverse=False)
-            #     # chessColorName = list(colorSim[0].keys())[0].split(".")[0][0]
-            #     # print(colorSim)
-            #     # print('最终颜色:', chessColorName)
-            #     # print('-------------------')
-            
-            chessName = chessColorName + chessTypeName
-
+            chessName = list(lstSim[0].keys())[0].split(".")[0]
             # print(chessName)
-            # print(lstSim)
-            # if 'colorSim' in locals():
-            #     print(colorSim)
-            # print('-------------------')
-
+            # dataList 中找到这次匹配的图片，将count减1
+            for data in dataList:
+                if data['f'] == chessName + '.jpg':
+                    data['count'] -= 1
+                    break
+            # for data in dataList:
+            #     print(data['f'], data['count'])
+            
             lstName.append(chessName)
 
         return lstName
 
-
-    def getFenFromImg(self, img):
+    # 将棋盘的范围，以便之后可以裁剪出棋盘，加快后续的识别速度
+    def getBoardRect(self,img):
         # 标准分辨率会比较大，缩小一倍不影响识别，并且会加快识别速度
         img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
-
         lstName, lstRect = self.getLstNameAndLstRect(img)
+    
+        # 找到 红车 与 黑车 的位置，以此确定棋盘的位置
+        rRectList = []
+        for i in range(len(lstName)):
+            if lstName[i] == '红车':
+                rRectList.append(lstRect[i])
+            if lstName[i] == '黑车':
+                rRectList.append(lstRect[i])
+
+        if len(rRectList) != 4:
+            print('未找到红车和黑车')
+            return ''
+        boardX1, boardY1 = min([x1 for x1, _, _, _ in rRectList]), min([y1 for _, y1, _, _ in rRectList])
+        boardX2, boardY2 = max([x2 for _, _, x2, _ in rRectList]), max([y2 for _, _, _, y2 in rRectList])
+        
+        self.boardRect = (boardX1*2-20, boardY1*2-20, boardX2*2+20, boardY2*2+20)
+
+    def getFenFromImg(self, img):
+        print('getFenFromImg')
+        if self.boardRect is None:
+            self.getBoardRect(img)
+
+        boardX1, boardY1, boardX2, boardY2 = self.boardRect
+        # print(boardX1, boardY1, boardX2, boardY2)
+        img = img[boardY1:boardY2, boardX1:boardX2]
+        # cv2.imshow('debug', img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
+        # 标准分辨率会比较大，缩小一倍不影响识别，并且会加快识别速度
+        img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
+        
+        lstName, lstRect = self.getLstNameAndLstRect(img)
+        
 
         # print(lstName)
         # print(lstRect)
