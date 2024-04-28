@@ -104,6 +104,7 @@ class Img2Fen:
         img2 = cv2.resize(img2, (30, 30))
 
         sift = cv2.SIFT_create()
+
         kp1, des1 = sift.detectAndCompute(img1, None)
         kp2, des2 = sift.detectAndCompute(img2, None)
         bf = cv2.BFMatcher()
@@ -113,6 +114,29 @@ class Img2Fen:
             if m.distance < 0.75 * n.distance:
                 good.append([m])
         return len(good)
+
+    def compareFeatureOrb(self, img1, img2):
+        # 将图片缩小，加快特征提取速度
+        img1 = cv2.resize(img1, (80, 80))
+        img2 = cv2.resize(img2, (80, 80))
+
+        fast = cv2.FastFeatureDetector_create()
+        orb = cv2.ORB_create()
+
+        kp1 = fast.detect(img1, None)
+        kp2 = fast.detect(img2, None)
+
+        # 使用ORB计算描述符
+        _, des1 = orb.compute(img1, kp1)
+        _, des2 = orb.compute(img2, kp2)
+        
+        # 创建BFMatcher对象
+        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+
+        # 使用Matcher匹配描述符
+        matches = bf.match(des1, des2)
+
+        return len(matches)
 
     def extract_center_color(self,img):
         h, w, _ = img.shape
@@ -161,6 +185,7 @@ class Img2Fen:
             lstSim.sort(key=lambda x: x[list(x.keys())[0]], reverse=True)
             chessName = list(lstSim[0].keys())[0].split(".")[0]
             # print(chessName)
+            # print(lstSim)
             # dataList 中找到这次匹配的图片，将count减1
             for data in dataList:
                 if data['f'] == chessName + '.jpg':
@@ -225,12 +250,6 @@ class Img2Fen:
         else:
             boardX1, boardY1, boardX2, boardY2 = self.boardPosition
 
-        # debug 将棋盘画出来
-        # cv2.rectangle(img, (boardX1, boardY1), (boardX2, boardY2), (0, 255, 0), 2)
-        # cv2.imshow('debug', img)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-
         cellWidth = (boardX2 - boardX1) // 8
         cellHeight = (boardY2 - boardY1) // 9
 
@@ -272,5 +291,9 @@ if __name__ == '__main__':
     img2fen.init('cc3.png')
 
     img1 = cv2.imread('cc3.png')    
-    fen = img2fen.getFenFromImg(img1)
+    startTimer = time.time()
+    N = 10
+    for i in range(N):
+        fen = img2fen.getFenFromImg(img1)
+    print(f'getFenFromImg time: {(time.time() - startTimer) / N}')
     print(fen)
