@@ -100,8 +100,8 @@ class Img2Fen:
 
     def compareFeature(self, img1, img2):
         # 将图片缩小，加快特征提取速度
-        img1 = cv2.resize(img1, (img1.shape[1] // 2, img1.shape[0] // 2))
-        img2 = cv2.resize(img2, (img2.shape[1] // 2, img2.shape[0] // 2))
+        img1 = cv2.resize(img1, (30, 30))
+        img2 = cv2.resize(img2, (30, 30))
 
         sift = cv2.SIFT_create()
         kp1, des1 = sift.detectAndCompute(img1, None)
@@ -196,32 +196,17 @@ class Img2Fen:
         self.boardRect = (boardX1*2-20, boardY1*2-20, boardX2*2+20, boardY2*2+20)
 
     def getFenFromImg(self, img):
-        print('getFenFromImg')
         if self.boardRect is None:
             self.getBoardRect(img)
 
         boardX1, boardY1, boardX2, boardY2 = self.boardRect
-        # print(boardX1, boardY1, boardX2, boardY2)
         img = img[boardY1:boardY2, boardX1:boardX2]
-        # cv2.imshow('debug', img)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-
+        
         # 标准分辨率会比较大，缩小一倍不影响识别，并且会加快识别速度
         img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
         
         lstName, lstRect = self.getLstNameAndLstRect(img)
         
-
-        # print(lstName)
-        # print(lstRect)
-
-        # cv2.imshow('debug', img)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-
-        
-
         if self.boardPosition is None:
             # 找到 红车 与 黑车 的位置，以此确定棋盘的位置
             rRectList = []
