@@ -2,6 +2,7 @@ import cv2
 import os
 import time
 import numpy as np
+import copy
 
 class Img2Fen:
     def __init__(self, outputImgPath = '../img'):
@@ -28,6 +29,9 @@ class Img2Fen:
         }
         self.boardRect = None
         self.boardPosition = None
+
+        self.dataList = None
+        self.sift = cv2.SIFT_create()
 
     def init(self, imgPath="/Users/u03013112/Downloads/cc2.png"):
         if os.path.exists(self.outputImgPath):
@@ -98,15 +102,16 @@ class Img2Fen:
     def compareHistograms(self, hist1, hist2):
         return cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
 
+    def getFeature(self, img):
+        img = cv2.resize(img, (30, 30))
+        _, des = self.sift.detectAndCompute(img, None)
+        return des
+
     def compareFeature(self, img1, img2):
         # 将图片缩小，加快特征提取速度
-        img1 = cv2.resize(img1, (30, 30))
-        img2 = cv2.resize(img2, (30, 30))
+        des1 = self.getFeature(img1)
+        des2 = self.getFeature(img2)
 
-        sift = cv2.SIFT_create()
-
-        kp1, des1 = sift.detectAndCompute(img1, None)
-        kp2, des2 = sift.detectAndCompute(img2, None)
         bf = cv2.BFMatcher()
         matches = bf.knnMatch(des1, des2, k=2)
         good = []
@@ -115,29 +120,16 @@ class Img2Fen:
                 good.append([m])
         return len(good)
 
-    def compareFeatureOrb(self, img1, img2):
-        # 将图片缩小，加快特征提取速度
-        img1 = cv2.resize(img1, (80, 80))
-        img2 = cv2.resize(img2, (80, 80))
-
-        fast = cv2.FastFeatureDetector_create()
-        orb = cv2.ORB_create()
-
-        kp1 = fast.detect(img1, None)
-        kp2 = fast.detect(img2, None)
-
-        # 使用ORB计算描述符
-        _, des1 = orb.compute(img1, kp1)
-        _, des2 = orb.compute(img2, kp2)
-        
-        # 创建BFMatcher对象
-        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-
-        # 使用Matcher匹配描述符
-        matches = bf.match(des1, des2)
-
-        return len(matches)
-
+    def compareFeature2(self, img1, des):
+        des1 = self.getFeature(img1)
+        bf = cv2.BFMatcher()
+        matches = bf.knnMatch(des1, des, k=2)
+        good = []
+        for m, n in matches:
+            if m.distance < 0.75 * n.distance:
+                good.append([m])
+        return len(good)
+    
     def extract_center_color(self,img):
         h, w, _ = img.shape
         a = 2
@@ -155,18 +147,22 @@ class Img2Fen:
         
         lstName = [] 
         
-        # 等待比对的图片列表，限制匹配数量，加速
-        dataList = []
-        for d1 in self.data:
-            f = list(d1.keys())[0]
-            img2 = d1[f]
-            count = 2
-            if f == '红帅.jpg' or f == '黑将.jpg':
-                count = 1
-            if f == '红兵.jpg' or f == '黑卒.jpg':
-                count = 5
+        if self.dataList is None:
+            # 等待比对的图片列表，限制匹配数量，加速
+            dataList = []
+            for d1 in self.data:
+                f = list(d1.keys())[0]
+                img2 = d1[f]
+                count = 2
+                if f == '红帅.jpg' or f == '黑将.jpg':
+                    count = 1
+                if f == '红兵.jpg' or f == '黑卒.jpg':
+                    count = 5
 
-            dataList.append({'f': f, 'img': img2, 'count': count})
+                dataList.append({'f': f, 'des': self.getFeature(img2), 'count': count})
+            self.dataList = dataList
+        
+        dataList = copy.deepcopy(self.dataList)
 
         for xy in lstRect:
             x1, y1, x2, y2 = xy
@@ -177,8 +173,12 @@ class Img2Fen:
                 if data['count'] == 0:
                     continue
                 f = data['f']
-                img2 = data['img']
-                sim = self.compareFeature(img, img2)
+                # img2 = data['img']
+                des = data['des']
+                
+                # sim = self.compareFeature(img, img2)
+                sim = self.compareFeature2(img, des)
+                
                 lstSim.append({f: sim})
             if len(lstSim) == 0:
                 break
@@ -295,5 +295,6 @@ if __name__ == '__main__':
     N = 10
     for i in range(N):
         fen = img2fen.getFenFromImg(img1)
+        print(fen)
     print(f'getFenFromImg time: {(time.time() - startTimer) / N}')
-    print(fen)
+    
