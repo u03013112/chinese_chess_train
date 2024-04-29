@@ -32,6 +32,25 @@ class Pikafish:
             return response
         return None
 
+    def sendCMDSync(self, command, needResponse=False):
+        # 清空 stdout
+        while True:
+            try:
+                line = self.process.stdout.readline()
+                if not line:
+                    break
+            except IOError:
+                break
+        print(f"Sending command: {command}")
+        self.process.stdin.write(command + "\n")
+        self.process.stdin.flush()
+        
+        # 有的cmd是没有返回的，就可以不用callback
+        if needResponse:
+            response = self._read_response()
+            return response
+        return None
+
     def _read_response(self, timeout=3):
         response = ""
         start_time = time.time()
@@ -67,3 +86,8 @@ if __name__ == '__main__':
     # 不使用回调函数
     # response = pikafish.sendCMD("position fen rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w KQkq - 0 1")
     # print(f"Received response: {response}")
+
+    pikafish.sendCMD('setoption name MultiPV value 10')
+    pikafish.sendCMD('position startpos')
+    pikafish.sendCMD('position fen rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR b - - 10 10')
+    pikafish.sendCMD('go depth 10', my_callback)
