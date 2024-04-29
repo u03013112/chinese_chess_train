@@ -23,6 +23,7 @@ import datetime
 import tkinter as tk
 from tkinter import messagebox
 from PIL import ImageGrab
+from mss import mss
 from img2Fen import Img2Fen
 import cv2
 import numpy as np
@@ -75,37 +76,61 @@ class ChessGui(tk.Tk):
         # 更新Label组件的文本
         self.textLabel.config(text=text)
 
-    def getScreen(self):
+    def getScreen(self,isFullScreen=False,debug=False):
         self.getScreenCount += 1
-        img = ImageGrab.grab()
+        with mss() as sct:
+            monitor = sct.monitors[0]
+            img = sct.grab(monitor)
+
+            imgNp = np.array(img)
+
+            if isFullScreen == False:
+                box = self.img2fen.boardRect
+                imgNp = imgNp[box[1]:box[3], box[0]:box[2], :]
+            
         imgNp = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
         # 去掉下面工具条，大约200像素
         # 苹果的图标好多都是圆的，好烦人
         imgNp = imgNp[:-200, :, :]
         return imgNp
     
-    def detectBoard(self):
-        # if messagebox.askokcancel('提示', "请将《天天象棋》游戏界面尽量不缩小，棋盘不要被遮挡，并且保持开局状态。"):
-            img = self.getScreen()
+    def detectBoard(self,debug=False):        
+        img = self.getScreen(isFullScreen=True)
+        ret = self.img2fen.getBoardRect(img)
+        self.img2fen.boardPosition = None
+        if ret == 'ok':
+            self.updateText('棋盘检测成功，点击开始导出按钮，开始导出棋谱。')
+            if True or debug:
+                rect = self.img2fen.boardRect
+                
+                img = ImageGrab.grab()
+                imgNp = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
-            fen = self.img2fen.getFenFromImg(img)
-            if fen in ["rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR",
-                        "RNBAKABNR/9/1C5C1/P1P1P1P1P/9/9/p1p1p1p1p/1c5c1/9/rnbakabnr"]:
-                # messagebox.showinfo('提示', "棋盘检测成功，点击开始导出按钮，开始导出棋谱。")
-                self.updateText('棋盘检测成功，点击开始导出按钮，开始导出棋谱。')
-            else:
-                messagebox.showwarning('提示', "棋盘检测失败，请重试。\n请将《天天象棋》游戏界面尽量不缩小，棋盘不要被遮挡，并且保持开局状态。")
+                cv2.rectangle(imgNp, (rect[0], rect[1]), (rect[2], rect[3]), (0, 0, 255), 2)                
+
+                cv2.imwrite('ccTest1.png', imgNp)
+
+                bbox = (rect[0], rect[1], rect[2], rect[3])
+                img = ImageGrab.grab(bbox)
+                imgNp = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+                cv2.imwrite('ccTest2.png', imgNp)
+
+        else:
+            self.updateText('棋盘检测失败，请重试。')
 
     def startExport(self):
         self.exportFen()
         self.timeCheck()
         
     def exportFen(self):
+        if self.img2fen.boardRect is None:
+            self.updateText('请先检测棋盘。')
+            return
         img = self.getScreen()
-        startTime = time.time()
+        # startTime = time.time()
         try:
             fen = self.img2fen.getFenFromImg(img)
-            print(f'getFenFromImg time: {time.time() - startTime}')
+            # print(f'getFenFromImg time: {time.time() - startTime}')
             if not self.fenList or fen != self.fenList[-1]:
                 print(fen)
                 if len(self.fenList) > 0:

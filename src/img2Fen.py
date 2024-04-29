@@ -219,13 +219,14 @@ class Img2Fen:
         boardX2, boardY2 = max([x2 for _, _, x2, _ in rRectList]), max([y2 for _, _, _, y2 in rRectList])
         
         self.boardRect = (boardX1*2-20, boardY1*2-20, boardX2*2+20, boardY2*2+20)
+        return 'ok'
 
     def getFenFromImg(self, img):
-        if self.boardRect is None:
-            self.getBoardRect(img)
+        # if self.boardRect is None:
+        #     self.getBoardRect(img)
 
-        boardX1, boardY1, boardX2, boardY2 = self.boardRect
-        img = img[boardY1:boardY2, boardX1:boardX2]
+        # boardX1, boardY1, boardX2, boardY2 = self.boardRect
+        # img = img[boardY1:boardY2, boardX1:boardX2]
         
         # 标准分辨率会比较大，缩小一倍不影响识别，并且会加快识别速度
         img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
@@ -291,10 +292,12 @@ if __name__ == '__main__':
     img2fen.init('cc3.png')
 
     img1 = cv2.imread('cc3.png')    
-    startTimer = time.time()
-    N = 10
-    for i in range(N):
-        fen = img2fen.getFenFromImg(img1)
-        print(fen)
-    print(f'getFenFromImg time: {(time.time() - startTimer) / N}')
+    img2fen.getBoardRect(img1)
+    print(img2fen.boardRect)
+    # startTimer = time.time()
+    # N = 10
+    # for i in range(N):
+    #     fen = img2fen.getFenFromImg(img1)
+    #     print(fen)
+    # print(f'getFenFromImg time: {(time.time() - startTimer) / N}')
     
