@@ -173,10 +173,8 @@ class Img2Fen:
                 if data['count'] == 0:
                     continue
                 f = data['f']
-                # img2 = data['img']
                 des = data['des']
                 
-                # sim = self.compareFeature(img, img2)
                 sim = self.compareFeature2(img, des)
                 
                 lstSim.append({f: sim})
@@ -184,9 +182,7 @@ class Img2Fen:
                 break
             lstSim.sort(key=lambda x: x[list(x.keys())[0]], reverse=True)
             chessName = list(lstSim[0].keys())[0].split(".")[0]
-            # print(chessName)
-            # print(lstSim)
-            # dataList 中找到这次匹配的图片，将count减1
+            
             for data in dataList:
                 if data['f'] == chessName + '.jpg':
                     data['count'] -= 1
@@ -222,12 +218,6 @@ class Img2Fen:
         return 'ok'
 
     def getFenFromImg(self, img):
-        # if self.boardRect is None:
-        #     self.getBoardRect(img)
-
-        # boardX1, boardY1, boardX2, boardY2 = self.boardRect
-        # img = img[boardY1:boardY2, boardX1:boardX2]
-        
         # 标准分辨率会比较大，缩小一倍不影响识别，并且会加快识别速度
         img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
         
