@@ -47,7 +47,7 @@ class Pikafish:
         
         # 有的cmd是没有返回的，就可以不用callback
         if needResponse:
-            response = self._read_response()
+            response = self._read_response(timeout=5)
             return response
         return None
 

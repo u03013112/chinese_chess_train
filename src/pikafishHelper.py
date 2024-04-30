@@ -17,6 +17,7 @@ class PikafishHelper:
         return response
     
     def parseGoResponse(self, response):
+        # print('response:',response)
         lines = response.split('\n')
         
         # 找到以 'info depth {self.depth}' 开头的行
