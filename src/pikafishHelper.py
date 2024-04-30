@@ -7,7 +7,7 @@ class PikafishHelper:
         self.pikafish = Pikafish()
         time.sleep(1)
         self.pikafish.sendCMD("uci")
-        self.pikafish.sendCMD('setoption name MultiPV value 10')
+        self.pikafish.sendCMD('setoption name MultiPV value 20')
 
     # wOrB: 'w' or 'b' 该谁走，w是红方，b是黑方
     def go(self, fen, wOrB):
@@ -16,6 +16,15 @@ class PikafishHelper:
         response = self.pikafish.sendCMDSync(f'go depth {self.depth}',needResponse=True)
         return response
     
+    def go2(self,moves):
+        if len(moves) == 0:
+            cmd = 'position startpos'
+        else:
+            cmd = 'position startpos moves '+ ' '.join(moves)
+        self.pikafish.sendCMD(cmd)
+        response = self.pikafish.sendCMDSync(f'go depth {self.depth}',needResponse=True)
+        return response
+        
     def parseGoResponse(self, response):
         # print('response:',response)
         lines = response.split('\n')
@@ -29,7 +38,7 @@ class PikafishHelper:
                 ret.append({'score': score, 'moves': moves})
 
         # 按照分数排序
-        ret.sort(key=lambda x: x['score'], reverse=True)
+        ret.sort(key=lambda x: int(x['score']), reverse=True)
         return ret
 
     

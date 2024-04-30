@@ -54,18 +54,16 @@ class Pikafish:
     def _read_response(self, timeout=3):
         response = ""
         while True:
-            # 使用 select 来等待输出
             readable, _, _ = select.select([self.process.stdout], [], [], timeout)
             if readable:
-                line = self.process.stdout.readline()
-                if line:
-                    response += line
+                output = self.process.stdout.read()
+                if output:
+                    response += output
                 else:
-                    # 如果 readline 返回空字符串，那么输出已经结束
                     break
             else:
-                # 如果没有可读的文件（即超时），那么输出已经结束
                 break
+
         return response
 
 if __name__ == '__main__':

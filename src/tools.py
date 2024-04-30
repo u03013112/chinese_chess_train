@@ -100,10 +100,10 @@ def fenMove2Qp(p,move):
     if fromX == toX:
         if fromY > toY:
             s = fromY - toY
-            ret += f'{fromY}退{s}'
+            ret += f'{fromX}退{s}'
         else:
             s = toY - fromY
-            ret += f'{fromY}进{s}'
+            ret += f'{fromX}进{s}'
 
     if name in ['马','相','象','士','仕']:
         if fromY > toY:
@@ -113,6 +113,24 @@ def fenMove2Qp(p,move):
 
     return ret
 
+def lastFenAndMove2Qp(lastFen,move):
+    # 找到p
+    def expand_fen(fen):
+        expanded = []
+        for char in fen:
+            if char.isdigit():
+                expanded.extend([' '] * int(char))
+            else:
+                expanded.append(char)
+        return expanded
+
+    lastFen = expand_fen(lastFen.replace('/', ''))
+    col_labels = 'abcdefghi'
+    # row_labels = '0123456789'
+    move_from = col_labels.index(move[0]) + int(move[1]) * 9
+    p = lastFen[move_from]
+
+    return fenMove2Qp(p,move)
 
 def testGetMove():
     fen1 = 'rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR'
@@ -125,4 +143,5 @@ def testGetMove():
     print(fenMove2Qp(p,move))
 
 if __name__ == '__main__':
-    testGetMove()
+    # testGetMove()
+    print(lastFenAndMove2Qp('rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR','h2e2'))

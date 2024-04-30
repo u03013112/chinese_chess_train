@@ -104,7 +104,7 @@ class ChessGui(tk.Tk):
         self.board.draw_board(style=2)
         # self.board.place_piece('a0', '红', '车')
         # self.board.place_piece('b0', '黑', '马')
-        self.board.readFen('rnbakabnr/9/1c2c4/p1p1p1p1p/9/9/P1P1P1P1P/1C2C4/9/RNBAKABNR')
+        self.board.readFen('rnbakabnr/9/1c2c4/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR')
 
 
 if __name__ == '__main__':
