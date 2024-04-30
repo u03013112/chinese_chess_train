@@ -50,30 +50,24 @@ class Pikafish:
             response = self._read_response(timeout=5)
             return response
         return None
-
+    
     def _read_response(self, timeout=3):
         response = ""
-        start_time = time.time()
         while True:
-            try:
+            # 使用 select 来等待输出
+            readable, _, _ = select.select([self.process.stdout], [], [], timeout)
+            if readable:
                 line = self.process.stdout.readline()
                 if line:
                     response += line
-                    
-                elif time.time() - start_time > timeout:
-                    print("Timeout reached1")
-                    break
                 else:
-                    time.sleep(0.1)  # 如果没有数据可读，等待 0.1 秒
-            except IOError:
-                if time.time() - start_time > timeout:
-                    print("Timeout reached2")
+                    # 如果 readline 返回空字符串，那么输出已经结束
                     break
-                else:
-                    time.sleep(0.1)  # 如果读取时发生 IOError，等待 0.1 秒
-        # print(f"Engine response:\n{response}")
+            else:
+                # 如果没有可读的文件（即超时），那么输出已经结束
+                break
         return response
-    
+
 if __name__ == '__main__':
     def my_callback(response):
         print(f"Callback received response: {response}")
