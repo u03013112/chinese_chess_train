@@ -12,9 +12,7 @@ def anaylizeFenFile(filename):
             fen = lines[i]
             nextFen = lines[i+1]
             p,move = getMove(fen,nextFen)
-            # print(lastFenAndMove2Qp(fen,move))
-            # wOrB = 'w' if i%2 == 0 else 'b'
-            # response = pikafishHelper.go(fen, wOrB)
+            
             response = pikafishHelper.go2(moves)
             moves.append(move)
             # 找到最好的走法
