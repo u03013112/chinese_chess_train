@@ -52,17 +52,20 @@ def analyzeFenFile(filename, output_csv):
 
             # 记录结果
             result = {
+                'idx': i+1,
                 'fen': fen,
-                'my_move': lastFenAndMove2Qp(fen,move),
-                'my_score': parsedResp[myRank-1]['score'] if myRank != -1 else None,
+                'move_fen': move,  # 原始的move
+                'move_qp': lastFenAndMove2Qp(fen,move),
+                'score': parsedResp[myRank-1]['score'] if myRank != -1 else None,
             }
             for i, best_move in enumerate(best_moves, start=1):
-                result[f'best_move{i}'] = lastFenAndMove2Qp(fen,best_move['moves'][0])
+                result[f'best_move{i}_fen'] = ','.join(best_move['moves'])  # 将整个队列存起来，使用逗号隔开
+                result[f'best_move{i}_qp'] = ','.join([lastFenAndMove2Qp(fen, m) for m in best_move['moves']])
                 result[f'best_score{i}'] = best_move['score']
             results.append(result)
 
         # 保存到CSV文件
-        keys = ['fen', 'my_move', 'my_score', 'best_move1', 'best_score1', 'best_move2', 'best_score2', 'best_move3', 'best_score3']
+        keys = ['idx', 'fen', 'move_fen', 'move_qp', 'score', 'best_move1_fen', 'best_move1_qp', 'best_score1', 'best_move2_fen', 'best_move2_qp', 'best_score2', 'best_move3_fen', 'best_move3_qp', 'best_score3']
         with open(output_csv, 'w', newline='') as output_file:
             dict_writer = csv.DictWriter(output_file, keys)
             dict_writer.writeheader()
