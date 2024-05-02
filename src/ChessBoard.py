@@ -1,3 +1,4 @@
+import math
 import tkinter as tk
 
 class ChessBoard(tk.Canvas):
@@ -90,6 +91,32 @@ class ChessBoard(tk.Canvas):
                     self.place_piece(pos, color, text)
                         
                     col_idx += 1
+        
+    def draw_arrow(self, pos1, pos2, color,number):
+        # Convert FEN positions to canvas coordinates
+        x1 = (ord(pos1[0]) - ord('a') + 1) * self.w
+        y1 = (10 - int(pos1[1])) * self.w
+        x2 = (ord(pos2[0]) - ord('a') + 1) * self.w
+        y2 = (10 - int(pos2[1])) * self.w
+
+        # Draw arrow
+        self.create_line(x1, y1, x2, y2, arrow=tk.LAST, fill=color, width=5, arrowshape=(20, 20, 10))
+
+        # Calculate the position of the number
+        dx, dy = x2 - x1, y2 - y1
+        dist = math.sqrt(dx*dx + dy*dy)
+        x_number = x2 - dx / dist * self.w / 2
+        y_number = y2 - dy / dist * self.w / 2
+
+        # Draw a green circle
+        radius = self.w / 5
+        self.create_oval(x_number - radius, y_number - radius, x_number + radius, y_number + radius, fill='green')
+
+        # Draw the number with white text
+        self.create_text(x_number, y_number, text=str(number), fill='white', font=('Arial', 10, 'bold'))
+
+        
+
 
 class ChessGui(tk.Tk):
     def __init__(self):
@@ -106,6 +133,7 @@ class ChessGui(tk.Tk):
         # self.board.place_piece('b0', '黑', '马')
         self.board.readFen('rnbakabnr/9/1c2c4/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR')
 
+        self.board.draw_arrow('h2', 'e2','red', 1)
 
 if __name__ == '__main__':
     app = ChessGui()
