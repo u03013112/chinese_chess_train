@@ -96,7 +96,10 @@ class ChessHistoryGui(tk.Tk):
         moves = self.bestMoveList[self.currentStep][index].split(',')
         for i, move in enumerate(moves[:4]):
             start, end = move[:2], move[2:]
-            color = 'red' if i%2 == 0 else 'black'
+            if self.currentStep % 2 == 0:
+                color = 'red' if i%2 == 0 else 'black'
+            else:
+                color = 'black' if i%2 == 0 else 'red'
             self.chessBoard.draw_arrow(start, end, color, i+1)
 
     def updateStep(self):
@@ -105,7 +108,12 @@ class ChessHistoryGui(tk.Tk):
 
     def updateText(self):
         text = f'步数：{self.currentStep}/{len(self.fenList) - 1}'
-        text += f'\n最优走法：{self.bestMoveList[self.currentStep]}'
+        # text += f'\n最优走法：{self.bestMoveList[self.currentStep]}'
+        if self.currentStep % 2 == 0:
+            color = '红'
+        else:
+            color = '黑'
+        text = f'该{color}方走棋\n'
         self.textLabel.config(text=text)
 
 if __name__ == '__main__':
