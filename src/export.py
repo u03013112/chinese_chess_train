@@ -249,22 +249,9 @@ def debug():
         print(fen2)
         print(app.getMove(fen1, fen2))
 
-def debug2():
-    app = ChessGui()
-#     2bk1abr1/9/3c2n2/p3C3p/6P2/3p5/P3P3P/3K1AN2/9/c1rn1AB2
-# c e2d2
-# 2bk1abr1/9/3n2n2/p7p/6P2/3p5/P3P3P/3K1AN2/9/c1rn1AB2
-# C e3d2
-    fen1 = '2bk1abr1/9/3c2n2/p3C3p/6P2/3p5/P3P3P/3K1AN2/9/c1rn1AB2'
-    fen2 = '2bk1abr1/9/3n2n2/p7p/6P2/3p5/P3P3P/3K1AN2/9/c1rn1AB2'
-    print(app.getMove(fen1, fen2, debug=True))
-
-
 if __name__ == '__main__':
     app = ChessGui()
     app.mainloop()
-
-    # debug2()
 
 
     
