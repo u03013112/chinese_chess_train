@@ -54,6 +54,7 @@ class ChessBoard(tk.Canvas):
 
     def readFen(self, fen):
         self.delete("piece")
+        self.delete("arrow")
         fen_rows = fen.split('/')
         for row_idx, row in enumerate(fen_rows):
             col_idx = 0
@@ -100,7 +101,7 @@ class ChessBoard(tk.Canvas):
         y2 = (10 - int(pos2[1])) * self.w
 
         # Draw arrow
-        self.create_line(x1, y1, x2, y2, arrow=tk.LAST, fill=color, width=5, arrowshape=(20, 20, 10))
+        self.create_line(x1, y1, x2, y2, arrow=tk.LAST, fill=color, width=5, arrowshape=(20, 20, 10), tags='arrow')
 
         # Calculate the position of the number
         dx, dy = x2 - x1, y2 - y1
@@ -110,10 +111,10 @@ class ChessBoard(tk.Canvas):
 
         # Draw a green circle
         radius = self.w / 5
-        self.create_oval(x_number - radius, y_number - radius, x_number + radius, y_number + radius, fill='green')
+        self.create_oval(x_number - radius, y_number - radius, x_number + radius, y_number + radius, fill='green', tags='arrow')
 
         # Draw the number with white text
-        self.create_text(x_number, y_number, text=str(number), fill='white', font=('Arial', 10, 'bold'))
+        self.create_text(x_number, y_number, text=str(number), fill='white', font=('Arial', 10, 'bold'), tags='arrow')
 
         
 
