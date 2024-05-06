@@ -39,7 +39,7 @@ def analyzeFenFile(filename, output_csv):
             response = pikafishHelper.go2(moves)
             moves.append(move)
             # 找到最好的走法
-            parsedResp = pikafishHelper.parseGoResponse(response)
+            parsedResp = pikafishHelper.parseGoResponse(response,logPath = f'log{i+1}.txt')
             best_moves = parsedResp[0:3]  # 取前3个最佳走法
 
             # 找到我的走法，在所有的走法中的排名

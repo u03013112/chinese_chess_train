@@ -25,20 +25,42 @@ class PikafishHelper:
         response = self.pikafish.sendCMDSync(f'go depth {self.depth}',needResponse=True)
         return response
         
-    def parseGoResponse(self, response):
+    def parseGoResponse(self, response,logPath = None):
         # print('response:',response)
         lines = response.split('\n')
         
         # 找到以 'info depth {self.depth}' 开头的行
         ret = []
+        log = []
         for line in lines:
             if line.startswith(f'info depth {self.depth}'):
-                score = line.split(' ')[9]
+                isMate = line.split(' ')[8] == 'mate'
+                if isMate:
+                    # 死棋的情况，后面的数字代表步数，步数越少，分数越高
+                    mateStepCount = int(line.split(' ')[9])
+                    # 粗略的估算
+                    if mateStepCount > 0:
+                        score = 10000 - mateStepCount*100
+                    else:
+                        score = -10000 - mateStepCount*100
+                else: 
+                    score = line.split(' ')[9]
+
                 moves = line.split(' pv ')[1].split(' ')
                 ret.append({'score': score, 'moves': moves})
+                if logPath:
+                    log.append({'line':line,'score':score,'moves':moves})
 
         # 按照分数排序
         ret.sort(key=lambda x: int(x['score']), reverse=True)
+
+        if logPath:
+            with open(logPath,'w') as f:
+                for l in log:
+                    f.write(l['line']+'\n')
+                    f.write(f'score: {l["score"]}\n')
+                    f.write(f'moves: {l["moves"]}\n')
+                    f.write('-------------------\n')
         return ret
 
     
@@ -46,7 +68,9 @@ class PikafishHelper:
 
 if __name__ == '__main__':
     pikafishHelper = PikafishHelper()
-    response = pikafishHelper.go('rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR', 'w')
+    # response = pikafishHelper.go('rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR', 'w')
+    response = pikafishHelper.go2(['h2e2','h9i7','e2e6','i9h9','b2b4','c6c5'])
+    # response = pikafishHelper.go2(['h2e2','h9i7','e2e6','i9h9','b2b4','c6c5','b4e4'])
     print(response)
     print(pikafishHelper.parseGoResponse(response))
 
