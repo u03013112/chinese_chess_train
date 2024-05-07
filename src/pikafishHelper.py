@@ -7,6 +7,7 @@ class PikafishHelper:
         self.pikafish = Pikafish()
         time.sleep(1)
         self.pikafish.sendCMD("uci")
+        self.pikafish.sendCMD("setoption name Threads value 4")
         self.pikafish.sendCMD('setoption name MultiPV value 20')
 
     # wOrB: 'w' or 'b' 该谁走，w是红方，b是黑方
