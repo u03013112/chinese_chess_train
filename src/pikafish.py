@@ -5,9 +5,8 @@ import select
 import subprocess
 
 class Pikafish:
-    def __init__(self):
-        nsenter_cmd = "nsenter --mount=/host/proc/1/ns/mnt docker exec -i pikafish /app/pikafish"
-        self.process = subprocess.Popen(nsenter_cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    def __init__(self,cmd = "nsenter --mount=/host/proc/1/ns/mnt docker exec -i pikafish /app/pikafish"):
+        self.process = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         # 设置 stdout 为非阻塞
         flags = fcntl.fcntl(self.process.stdout, fcntl.F_GETFL)
         fcntl.fcntl(self.process.stdout, fcntl.F_SETFL, flags | os.O_NONBLOCK)

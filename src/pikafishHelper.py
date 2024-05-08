@@ -1,10 +1,21 @@
 import time
+import platform
 from pikafish import Pikafish
 
 class PikafishHelper:
     def __init__(self, depth=10):
         self.depth = depth
-        self.pikafish = Pikafish()
+        
+        current_os = platform.system()
+        if current_os == 'Darwin':
+            # 安装参照文档：
+            # https://github.com/official-pikafish/Pikafish/wiki/Compiling-from-source#macos
+            self.pikafish = Pikafish('/Users/u03013112/Documents/git/Pikafish/src/pikafish')
+        elif current_os == 'Linux':    
+            self.pikafish = Pikafish()
+        else:
+            print('Unsupported OS')
+            exit(1)
         time.sleep(1)
         self.pikafish.sendCMD("uci")
         self.pikafish.sendCMD("setoption name Threads value 4")
