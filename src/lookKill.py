@@ -24,7 +24,8 @@ class LookKill:
             bestMoveFen1 = filtered_df.iloc[i]['best_move1_fen']
             bestScore1 = filtered_df.iloc[i]['best_score1']
             color = 'red' if idx % 2 == 1 else 'black'
-            step = (10000 - bestScore1) / 100
+            # step = (10000 - bestScore1) / 100
+            step = len(bestMoveFen1.split(','))
             new_row = pd.DataFrame({
                 'filename': [csvFilename],
                 'idx': [idx],
@@ -45,7 +46,9 @@ class LookKill:
                 csv_path = os.path.join(path, filename)
                 df = self.readCsv(csv_path)
                 dfs.append(df)  # 将DataFrame添加到列表中
-        ret = pd.concat(dfs, ignore_index=True)  # 使用pd.concat合并所有的DataFrame
+        
+        ret = pd.concat(dfs, ignore_index=True)
+        # 下面这行为什么在IDE中是不能运行到的？
         return ret
 
     def getCurrentQuestion(self):
@@ -65,4 +68,7 @@ class LookKill:
 
 if __name__ == '__main__':
     lookKill = LookKill()
-    print(lookKill.df)
+    df = lookKill.df
+    print(len(df))
+    print(df['color'].unique())
+    print(df['step'].unique()) 

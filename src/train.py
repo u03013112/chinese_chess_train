@@ -32,6 +32,9 @@ class SimpleChessGui(tk.Tk):
         self.btnNext = tk.Button(self, text='下一题', command=self.nextQuestion)
         self.btnNext.grid(row=2, column=0, pady=5)
 
+        self.btnBest1 = tk.Button(self, text='看答案', command=self.showAnswer)
+        self.btnBest1.grid(row=3, column=0, pady=5)
+
         self.textLabel = tk.Text(self, wrap=tk.WORD, height=4,width=25)
         self.textLabel.grid(row=7, column=0)
         self.textLabel.tag_configure('red', foreground='red')
@@ -57,7 +60,7 @@ class SimpleChessGui(tk.Tk):
             question = self.lookKill.getCurrentQuestion()
             color = question['color']
             colorZ = '红' if color == 'red' else '黑'
-            step = question['step']
+            step = int(question['step'])
             self.textLabel.insert(tk.END, f'{colorZ}方', color)
             self.textLabel.insert(tk.END, f' {step}步杀\n', 'blue')
         else:
@@ -79,6 +82,24 @@ class SimpleChessGui(tk.Tk):
         else:
             print('请先选择模式')
         
+    def showAnswer(self):
+        if self.mode == 'lookKill':
+            question = self.lookKill.getCurrentQuestion()
+            # 轮到什么颜色走
+            color = question['color']
+            bestMoveFen1 = question['bestMoveFen1']
+            moves = bestMoveFen1.split(',')
+            for i, move in enumerate(moves):
+                start, end = move[:2], move[2:]
+                # color2 是箭头颜色
+                if i % 2 == 0:
+                    color2 = color
+                else:
+                    color2 = 'red' if color == 'black' else 'black'
+
+                self.chessBoard.draw_arrow(start, end, color2, i+1)
+        else:
+            print('请先选择模式')
 
 if __name__ == '__main__':
     app = SimpleChessGui()
