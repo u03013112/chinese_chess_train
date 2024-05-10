@@ -12,20 +12,20 @@ class Img2Fen:
         self.outputImgPath = os.path.abspath(os.path.join(scriptDir, outputImgPath))
         
         self.lstNameMap = {
-            "红仕": "a",
-            "红帅": "k",
-            "红相": "b",
-            "红马": "n",
-            "红兵": "p",
-            "红炮": "c",
-            "红车": "r",
-            "黑士": "A",
-            "黑炮": "C",
-            "黑车": "R",
-            "黑卒": "P",
-            "黑将": "K",
-            "黑象": "B",
-            "黑马": "N"
+            "红仕": "A",
+            "红帅": "K",
+            "红相": "B",
+            "红马": "N",
+            "红兵": "P",
+            "红炮": "C",
+            "红车": "R",
+            "黑士": "a",
+            "黑炮": "c",
+            "黑车": "r",
+            "黑卒": "p",
+            "黑将": "k",
+            "黑象": "b",
+            "黑马": "n"
         }
         self.boardRect = None
         self.boardPosition = None
@@ -251,8 +251,8 @@ class Img2Fen:
             x = (x1 + x2) / 2
             y = (y1 + y2) / 2
             j = round((x - boardX1) / cellWidth)
-            # i = round((y - boardY1) / cellHeight)
-            i = round((boardY2 - y) / cellHeight)
+            i = round((y - boardY1) / cellHeight)
+            # i = round((boardY2 - y) / cellHeight)
             boardMatrix[i][j] = piece
 
         fen = ""
@@ -284,10 +284,6 @@ if __name__ == '__main__':
     img1 = cv2.imread('cc3.png')    
     img2fen.getBoardRect(img1)
     print(img2fen.boardRect)
-    # startTimer = time.time()
-    # N = 10
-    # for i in range(N):
-    #     fen = img2fen.getFenFromImg(img1)
-    #     print(fen)
-    # print(f'getFenFromImg time: {(time.time() - startTimer) / N}')
-    
+
+    fen = img2fen.getFenFromImg(img1)
+    print(fen)    
