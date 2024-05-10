@@ -15,7 +15,7 @@ from ChessBoard import ChessBoard
 class SimpleChessGui(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title('简单棋盘展示')
+        self.title('自我训练')
         self.geometry('500x420')
         self.initUI()
         # mode 暂时只有init和lookKill两种
@@ -47,7 +47,7 @@ class SimpleChessGui(tk.Tk):
         self.chessBoard.grid(row=0, column=1, rowspan=8, padx=20)
 
     def watchKill(self):
-        print('看杀')
+        self.title('看杀')
         if self.lookKill is None:
             self.lookKill = LookKill()
             self.mode = 'lookKill'
