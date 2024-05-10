@@ -36,6 +36,7 @@ class LookKill:
             })
             ret = pd.concat([ret, new_row], ignore_index=True)
 
+
         return ret
 
     
@@ -70,5 +71,13 @@ if __name__ == '__main__':
     lookKill = LookKill()
     df = lookKill.df
     print(len(df))
-    print(df['color'].unique())
-    print(df['step'].unique()) 
+
+    # 找到df中是否存在fen重复的行
+    # print(df[df.duplicated(['fen'], keep=False)])
+
+    print(df[df['step'] == 1])
+
+
+
+    # print(df['color'].unique())
+    # print(df['step'].unique()) 
