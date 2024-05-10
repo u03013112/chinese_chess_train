@@ -35,6 +35,9 @@ class SimpleChessGui(tk.Tk):
         self.btnBest1 = tk.Button(self, text='看答案', command=self.showAnswer)
         self.btnBest1.grid(row=3, column=0, pady=5)
 
+        self.btnBest1 = tk.Button(self, text='隐藏答案', command=self.hideAnswer)
+        self.btnBest1.grid(row=4, column=0, pady=5)
+
         self.textLabel = tk.Text(self, wrap=tk.WORD, height=4,width=25)
         self.textLabel.grid(row=7, column=0)
         self.textLabel.tag_configure('red', foreground='red')
@@ -106,6 +109,13 @@ class SimpleChessGui(tk.Tk):
                     color2 = 'red' if color == 'black' else 'black'
 
                 self.chessBoard.draw_arrow(start, end, color2, i+1)
+        else:
+            print('请先选择模式')
+
+    def hideAnswer(self):
+        if self.mode == 'lookKill':
+            question = self.lookKill.getCurrentQuestion()
+            self.chessBoard.readFen(question['fen'])
         else:
             print('请先选择模式')
 
