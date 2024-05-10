@@ -52,6 +52,10 @@ class SimpleChessGui(tk.Tk):
             self.lookKill = LookKill()
             self.mode = 'lookKill'
 
+            question = self.lookKill.getCurrentQuestion()
+            self.chessBoard.readFen(question['fen'])
+            self.updateText()
+
     def updateText(self):
         self.textLabel.config(state=tk.NORMAL)
         self.textLabel.delete('1.0', tk.END)
@@ -63,6 +67,10 @@ class SimpleChessGui(tk.Tk):
             step = int(question['step'])
             self.textLabel.insert(tk.END, f'{colorZ}方', color)
             self.textLabel.insert(tk.END, f' {step}步杀\n', 'blue')
+
+            totalQuestion = len(self.lookKill.df)
+            currentQuestion = self.lookKill.currentQuestionCount + 1
+            self.textLabel.insert(tk.END, f'第{currentQuestion}/{totalQuestion}题\n', 'blue')
         else:
             self.textLabel.insert(tk.END, '请先选择模式')
 
