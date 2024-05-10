@@ -78,6 +78,10 @@ class LookKillUI(tk.Tk):
 
             self.chessBoard.draw_arrow(start, end, color2, i+1)
 
+        # debug
+        fen = question['fen']
+        print(fen)
+
     def hideAnswer(self):
         question = self.lookKill.getCurrentQuestion()
         self.chessBoard.readFen(question['fen'])
