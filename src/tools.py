@@ -17,57 +17,64 @@ pNameList = [
 ]
 
 def getMove(lastFen, fen, debug=False):
-        def expand_fen(fen):
-            expanded = []
-            for char in fen:
-                if char.isdigit():
-                    expanded.extend([' '] * int(char))
-                else:
-                    expanded.append(char)
-            return expanded
+    if debug:
+        print('lastFen:', lastFen)
+        print('fen:', fen)
 
-        lastFen = expand_fen(lastFen.replace('/', ''))
-        fen = expand_fen(fen.replace('/', ''))
+    def expand_fen(fen):
+        expanded = []
+        for char in fen:
+            if char.isdigit():
+                expanded.extend([' '] * int(char))
+            else:
+                expanded.append(char)
+        return expanded
 
-        if len(lastFen) != len(fen):
-            raise ValueError("Invalid FEN strings")
+    lastFen = expand_fen(lastFen.replace('/', ''))
+    fen = expand_fen(fen.replace('/', ''))
 
-        diff_count = 0
-        move_from = None
-        move_to = None
+    if len(lastFen) != len(fen):
+        raise ValueError("Invalid FEN strings")
 
-        for i in range(len(lastFen)):
-            if lastFen[i] != fen[i]:
-                diff_count += 1
-                if diff_count > 2:
-                    raise ValueError("变化的数量太多了, diff_count={diff_count}")
+    diff_count = 0
+    move_from = None
+    move_to = None
 
-                if fen[i] == ' ':
-                    move_from = i
-                else:
-                    move_to = i
+    for i in range(len(lastFen)):
+        if lastFen[i] != fen[i]:
+            diff_count += 1
+            if diff_count > 2:
+                raise ValueError(f"变化的数量太多了, diff_count={diff_count}")
 
-        if diff_count != 2:
-            raise ValueError(f"变化的数量不是2个, diff_count={diff_count}")
+            if fen[i] == ' ':
+                move_from = i
+            else:
+                move_to = i
 
-        pLast = lastFen[move_from]
-        p = fen[move_to]
+    if diff_count != 2:
+        raise ValueError(f"变化的数量不是2个, diff_count={diff_count}")
+    
+    if move_from is None or move_to is None:
+        raise ValueError(f"没有找到移动的位置, move_from={move_from}, move_to={move_to}")
 
-        if debug:
-            print(''.join(lastFen))
-            print(''.join(fen))
-            print('p last:', pLast)
-            print('p:', p)
+    pLast = lastFen[move_from]
+    p = fen[move_to]
 
-        # 按照中国象棋的规则，棋子是不能凭空消失的，pLast 与 p 必须相同
-        if pLast != p:
-            raise ValueError(f"棋子发生了变化, {pLast} => {p}")
+    if debug:
+        print(''.join(lastFen))
+        print(''.join(fen))
+        print('p last:', pLast)
+        print('p:', p)
 
-        col_labels = 'abcdefghi'
-        # row_labels = '0123456789'
-        row_labels = '9876543210'
-        move = col_labels[move_from % 9] + row_labels[move_from // 9] + col_labels[move_to % 9] + row_labels[move_to // 9]
-        return p,move
+    # 按照中国象棋的规则，棋子是不能凭空消失的，pLast 与 p 必须相同
+    if pLast != p:
+        raise ValueError(f"棋子发生了变化, {pLast} => {p}")
+
+    col_labels = 'abcdefghi'
+    # row_labels = '0123456789'
+    row_labels = '9876543210'
+    move = col_labels[move_from % 9] + row_labels[move_from // 9] + col_labels[move_to % 9] + row_labels[move_to // 9]
+    return p,move
 
 # 从类似c,h2e2 转化成 红方 炮二平五
 def fenMove2Qp(p,move):
