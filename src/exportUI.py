@@ -13,15 +13,13 @@ from export import Export
 from ChessBoard import ChessBoard
 
 class ChessGui(tk.Tk):
-    def __init__(self, qipuPath=os.getcwd()+'/../qipu'):
+    def __init__(self):
         super().__init__()
         self.title('棋谱导出')
         self.geometry('500x400')  # 增加窗口宽度以适应更长的文本
         self.initUI()
         self.exporter = Export()
         self.after_id = None
-
-        self.qipuPath = qipuPath
 
         # 用于计算运行效率
         self.timer = None
@@ -87,6 +85,7 @@ class ChessGui(tk.Tk):
             self.updateText('棋盘检测失败，请重试。')
 
     def startExport(self):
+        self.exporter.filename = os.getcwd()+'/../qipu/'+datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.txt'
         self.exportFen()
         self.timeCheck()
         
@@ -108,7 +107,7 @@ class ChessGui(tk.Tk):
             self.after_cancel(self.after_id)
             self.after_id = None
         self.exporter.save()
-        self.quit()
+        # self.quit()
 
 if __name__ == '__main__':
     app = ChessGui()

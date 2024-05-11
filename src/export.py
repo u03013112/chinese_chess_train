@@ -66,19 +66,20 @@ class Export:
         self.lastFrameProcessed = True
         return fen
 
-    def save(self):
+    def save(self, isSaveMove = False):
         with open(self.filename, 'w') as f:
             f.write('\n'.join(self.fenList))
 
         # 记录moveList
-        pList = []
-        moveList = []
-        for move in self.moveList:
-            pList.append(move['p'])
-            moveList.append(move['move'])
-        df = pd.DataFrame({'p': pList, 'move': moveList})
-        moveFilename = os.path.splitext(self.filename)[0] + '_move.csv'
-        df.to_csv(moveFilename, index=False)
+        if isSaveMove:
+            pList = []
+            moveList = []
+            for move in self.moveList:
+                pList.append(move['p'])
+                moveList.append(move['move'])
+            df = pd.DataFrame({'p': pList, 'move': moveList})
+            moveFilename = os.path.splitext(self.filename)[0] + '_move.csv'
+            df.to_csv(moveFilename, index=False)
 
 def test(video_filename):
     exporter = Export()
