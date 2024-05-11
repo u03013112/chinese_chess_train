@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from img2Fen import Img2Fen
 from tools import getMove
+import cv2
 
 class Export:
     def __init__(self, filename=None):
@@ -12,6 +13,8 @@ class Export:
         self.fenList = []
         self.moveList = []
         self.filename = filename or datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.txt'
+        self.lastFrame = None
+        self.lastFrameProcessed = False
 
     def detectBoard(self, img):
         ret = self.img2fen.getBoardRect(img)
@@ -21,7 +24,25 @@ class Export:
         else:
             return False
 
+    def isNeedDetect(self, img):
+        if self.lastFrame is None:
+            self.lastFrame = img.copy()
+            self.lastFrameProcessed = False
+            return True
+
+        diff = cv2.absdiff(img, self.lastFrame)
+        _, diff = cv2.threshold(diff, 150, 255, cv2.THRESH_BINARY)
+        if np.any(diff):
+            self.lastFrame = img.copy()
+            self.lastFrameProcessed = False
+            return True
+        else:
+            return not self.lastFrameProcessed
+
     def exportFen(self, img):
+        if not self.isNeedDetect(img):
+            return
+
         fen = self.img2fen.getFenFromImg(img)
         if not self.fenList or fen != self.fenList[-1]:
             if len(self.fenList) > 0:
@@ -42,6 +63,7 @@ class Export:
                         self.fenList.append(fen)
             else:
                 self.fenList.append(fen)
+        self.lastFrameProcessed = True
         return fen
 
     def save(self):
@@ -58,7 +80,6 @@ class Export:
         moveFilename = os.path.splitext(self.filename)[0] + '_move.csv'
         df.to_csv(moveFilename, index=False)
 
-import cv2
 def test(video_filename):
     exporter = Export()
     cap = cv2.VideoCapture(video_filename)
@@ -74,70 +95,15 @@ def test(video_filename):
     if exporter.detectBoard(frame):
         print("棋盘检测成功，开始导出棋谱。")
 
-        lastFrame = None
-        lastFrameProcessed = False
-
-        count = 0
         while ret:
-            count += 1
-            if lastFrame is None:
-                lastFrame = frame.copy()
-                lastFrameProcessed = False
-            else:
-                # 计算两帧之间的差异
-                diff = cv2.absdiff(frame, lastFrame)
-                # 将差异转换为二值图像，以便更清楚地看到差异
-                _, diff = cv2.threshold(diff, 150, 255, cv2.THRESH_BINARY)
-                # 如果两帧之间的差异大于阈值，则更新lastFrame并将lastFrameProcessed设置为False
-                if np.any(diff):
-                    lastFrame = frame.copy()
-                    lastFrameProcessed = False
-                else:
-                    
-                    if not lastFrameProcessed:
-                        print(count)
-                        # exporter.exportFen(lastFrame)
-
-                        cv2.imshow('frame', lastFrame)
-                        cv2.waitKey(0)
-                        cv2.destroyAllWindows()
-                        
-                        lastFrameProcessed = True
-
+            exporter.exportFen(frame)
             ret, frame = cap.read()
     else:
         print("棋盘检测失败，请重试。")
 
-    # exporter.save()
-    cap.release()
-
-def compare_first_two_frames(video_filename):
-    cap = cv2.VideoCapture(video_filename)
-
-    if not cap.isOpened():
-        print("Error: Could not open video file.")
-        return
-
-    # 读取第一帧和第二帧
-    ret, frame1 = cap.read()
-    ret, frame2 = cap.read()
-
-    # 遍历所有可能的阈值
-    for threshold in range(1, 256):
-        # 计算两帧之间的差异
-        diff = cv2.absdiff(frame1, frame2)
-
-        # 将差异转换为二值图像
-        _, diff = cv2.threshold(diff, threshold, 255, cv2.THRESH_BINARY)
-
-        # 如果二值图像中没有白色像素（值为255），则认为两帧一致
-        is_diff = np.any(diff)
-
-        print(f"Threshold: {threshold}, is_diff: {is_diff}")
-
+    exporter.save()
     cap.release()
 
 if __name__ == '__main__':
     video_filename = "../screenSnapshot/2024-05-11_12-24-13.avi"
     test(video_filename)
-    # compare_first_two_frames(video_filename)
