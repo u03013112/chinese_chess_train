@@ -49,7 +49,7 @@ class Export:
                 lastFen = self.fenList[-1]
                 if fen != lastFen:
                     try:
-                        p, move = getMove(lastFen, fen, debug=False)
+                        p, move = getMove(lastFen, fen, debug=True)
                     except ValueError as e:
                         # print(e)
                         pass

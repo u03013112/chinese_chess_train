@@ -207,7 +207,7 @@ class Img2Fen:
     # 将棋盘的范围，以便之后可以裁剪出棋盘，加快后续的识别速度
     def getBoardRect(self,img):
         # 标准分辨率会比较大，缩小一倍不影响识别，并且会加快识别速度
-        # img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
+        img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
         lstName, lstRect = self.getLstNameAndLstRect(img)
     
         # 找到 红车 与 黑车 的位置，以此确定棋盘的位置
@@ -229,7 +229,7 @@ class Img2Fen:
 
     def getFenFromImg(self, img):
         # 标准分辨率会比较大，缩小一倍不影响识别，并且会加快识别速度
-        # img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
+        img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
         
         lstName, lstRect = self.getLstNameAndLstRect(img)
         
