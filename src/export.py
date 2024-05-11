@@ -41,7 +41,7 @@ class Export:
 
     def exportFen(self, img):
         if not self.isNeedDetect(img):
-            return
+            return None
 
         fen = self.img2fen.getFenFromImg(img)
         if not self.fenList or fen != self.fenList[-1]:
