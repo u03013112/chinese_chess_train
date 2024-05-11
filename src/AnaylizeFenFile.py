@@ -20,6 +20,7 @@
 # 额外的，可能可以加上是哪方走的，是红方还是黑方，方便之后过滤。
 # 另外，可以将各种move都加一组中文注释，方便阅读。
 
+import os
 import csv
 from pikafishHelper import PikafishHelper
 from tools import getMove, lastFenAndMove2Qp
@@ -71,19 +72,18 @@ def analyzeFenFile(filename, output_csv):
             dict_writer.writeheader()
             dict_writer.writerows(results)
 
-def debug(filename):
-    with open(filename, 'r') as f:
-        content = f.read().strip()
-        lines = content.split('\n')
-        for i in range(len(lines)-1):
-            fen = lines[i]
-            nextFen = lines[i+1]
-            print(i)
-            print(fen)
-            print(nextFen)
-            p,move = getMove(fen,nextFen)
+def main():
+    path = '../qipu/'
+    # 找到所有的txt文件，如果有同名的csv文件，就跳过
+    for file in os.listdir(path):
+        if file.endswith('.txt'):
+            csv_file = file.replace('.txt', '.csv')
+            if os.path.exists(os.path.join(path, csv_file)):
+                continue
+            print(f'Analyzing {file}...')
+            analyzeFenFile(os.path.join(path, file), os.path.join(path, csv_file))
 
 if __name__ == '__main__':
-    analyzeFenFile('../qipu/20240427230906fen.txt', '../qipu/20240427230906fen.csv')
-    # debug('../qipu/20240427230906fen.txt')
+    main()
+    
 

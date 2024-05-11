@@ -224,7 +224,7 @@ class Img2Fen:
         boardX1, boardY1 = min([x1 for x1, _, _, _ in rRectList]), min([y1 for _, y1, _, _ in rRectList])
         boardX2, boardY2 = max([x2 for _, _, x2, _ in rRectList]), max([y2 for _, _, _, y2 in rRectList])
         
-        self.boardRect = (boardX1*2-20, boardY1*2-20, boardX2*2+20, boardY2*2+20)
+        self.boardRect = (boardX1*2-20, boardY1*2-20, boardX2*2+20, boardY2*2+40)
         return 'ok'
 
     def getFenFromImg(self, img):

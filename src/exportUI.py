@@ -97,9 +97,12 @@ class ChessGui(tk.Tk):
             self.updateText('棋盘检测失败，请重试。')
 
     def startExport(self):
-        self.exporter.filename = os.getcwd()+'/../qipu/'+datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.txt'
+        self.exporter.reset(filename=os.getcwd()+'/../qipu/'+datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.txt')
+        if self.after_id:
+            self.after_cancel(self.after_id)
+            self.after_id = None
         self.exportFen()
-        self.timeCheck()
+        # self.timeCheck()
         
     def exportFen(self):
         if self.exporter.img2fen.boardRect is None:
@@ -110,13 +113,15 @@ class ChessGui(tk.Tk):
         # cv2.imshow('img', img)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
+        try:
+            fen = self.exporter.exportFen(img)
+            if fen:
+                self.chessBoard.readFen(fen)
+                stepCount = len(self.exporter.fenList) - 1 if len(self.exporter.fenList) > 0 else 0
+                self.updateText(f'目前是第{stepCount}步。')
+        except Exception as e:
+            pass
 
-        fen = self.exporter.exportFen(img)
-        if fen:
-            self.chessBoard.readFen(fen)
-            stepCount = len(self.exporter.fenList) - 1 if len(self.exporter.fenList) > 0 else 0
-            self.updateText(f'目前是第{stepCount}步。')
-        
         self.after_id = self.after(10, self.exportFen)
 
     def endExport(self):

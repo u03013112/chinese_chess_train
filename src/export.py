@@ -16,6 +16,19 @@ class Export:
         self.lastFrame = None
         self.lastFrameProcessed = False
 
+    def reset(self, filename=None):
+        print('reset')
+        # 记录棋盘位置
+        lastBoardRect = self.img2fen.boardRect
+        self.img2fen = Img2Fen()
+        self.img2fen.init()
+        self.img2fen.boardRect = lastBoardRect
+        self.fenList = []
+        self.moveList = []
+        self.filename = filename or datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.txt'
+        self.lastFrame = None
+        self.lastFrameProcessed = False
+
     def detectBoard(self, img):
         ret = self.img2fen.getBoardRect(img)
         self.img2fen.boardPosition = None
@@ -31,7 +44,7 @@ class Export:
             return True
 
         diff = cv2.absdiff(img, self.lastFrame)
-        _, diff = cv2.threshold(diff, 150, 255, cv2.THRESH_BINARY)
+        _, diff = cv2.threshold(diff, 100, 255, cv2.THRESH_BINARY)
         if np.any(diff):
             self.lastFrame = img.copy()
             self.lastFrameProcessed = False
@@ -51,7 +64,7 @@ class Export:
                     try:
                         p, move = getMove(lastFen, fen, debug=True)
                     except ValueError as e:
-                        # print(e)
+                        print(e)
                         pass
                     else:
                         self.moveList.append({'p': p, 'move': move})
@@ -64,7 +77,7 @@ class Export:
             else:
                 self.fenList.append(fen)
         self.lastFrameProcessed = True
-        return fen
+        return self.fenList[-1]
 
     def save(self, isSaveMove = False):
         with open(self.filename, 'w') as f:

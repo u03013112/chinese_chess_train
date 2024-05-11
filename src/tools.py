@@ -59,17 +59,25 @@ def getMove(lastFen, fen, debug=False):
 
     pLast = lastFen[move_from]
     p = fen[move_to]
+    # 
+    deadP = lastFen[move_to]
 
     if debug:
         print(''.join(lastFen))
         print(''.join(fen))
         print('p last:', pLast)
         print('p:', p)
+        print('deadP:', deadP)
 
     # 按照中国象棋的规则，棋子是不能凭空消失的，pLast 与 p 必须相同
     if pLast != p:
         raise ValueError(f"棋子发生了变化, {pLast} => {p}")
 
+    if deadP != ' ':
+        # 按照中国象棋规则，p和deadP不能是同一方的
+        if p.islower() == deadP.islower():
+            raise ValueError(f"p和deadP不能是同一方的, p={p}, deadP={deadP}")
+        
     col_labels = 'abcdefghi'
     # row_labels = '0123456789'
     row_labels = '9876543210'
