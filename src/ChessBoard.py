@@ -49,7 +49,8 @@ class ChessBoard(tk.Canvas):
     def place_piece(self, pos, color, text):
         # Convert FEN position to canvas coordinates
         x = (ord(pos[0]) - ord('a') + 1) * self.w
-        y = (10 - int(pos[1])) * self.w
+        # y = (10 - int(pos[1])) * self.w
+        y = (int(pos[1]) + 1) * self.w
         self.draw_piece(x, y, color, text)
 
     def readFen(self, fen):
@@ -63,7 +64,7 @@ class ChessBoard(tk.Canvas):
                     col_idx += int(char)
                 else:
                     pos = chr(ord('a') + col_idx) + str(row_idx)
-                    color = '黑' if char.isupper() else '红'
+                    color = '黑' if char.isupper() == False else '红'
                     
                     text = ''
                     if char.lower() == 'r':
@@ -72,21 +73,21 @@ class ChessBoard(tk.Canvas):
                         text = '马'
                     elif char.lower() == 'c':
                         text = '炮'
-                    elif char == 'a':
-                        text = '仕'
                     elif char == 'A':
+                        text = '仕'
+                    elif char == 'a':
                         text = '士'
-                    elif char == 'k':
-                        text = '帅'
                     elif char == 'K':
+                        text = '帅'
+                    elif char == 'k':
                         text = '将'
-                    elif char == 'p':
-                        text = '兵'
                     elif char == 'P':
+                        text = '兵'
+                    elif char == 'p':
                         text = '卒'
-                    elif char == 'b':
-                        text = '象'
                     elif char == 'B':
+                        text = '象'
+                    elif char == 'b':
                         text = '相'
 
                     self.place_piece(pos, color, text)
@@ -132,7 +133,7 @@ class ChessGui(tk.Tk):
         self.board.draw_board(style=2)
         # self.board.place_piece('a0', '红', '车')
         # self.board.place_piece('b0', '黑', '马')
-        # self.board.readFen('rnbakabnr/9/1c2c4/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR')
+        self.board.readFen('rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C2C4/9/RNBAKABNR')
 
         # self.board.draw_arrow('h2', 'e2','red', 1)
 

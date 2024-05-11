@@ -64,7 +64,8 @@ def getMove(lastFen, fen, debug=False):
             raise ValueError(f"棋子发生了变化, {pLast} => {p}")
 
         col_labels = 'abcdefghi'
-        row_labels = '0123456789'
+        # row_labels = '0123456789'
+        row_labels = '9876543210'
         move = col_labels[move_from % 9] + row_labels[move_from // 9] + col_labels[move_to % 9] + row_labels[move_to // 9]
         return p,move
 
@@ -144,4 +145,5 @@ def testGetMove():
 
 if __name__ == '__main__':
     # testGetMove()
-    print(lastFenAndMove2Qp('rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR','h2e2'))
+    # print(lastFenAndMove2Qp('rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR','h2e2'))
+    print(getMove('rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR','rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C2C4/9/RNBAKABNR',debug=True))

@@ -26,7 +26,7 @@ from tools import getMove, lastFenAndMove2Qp
 
 def analyzeFenFile(filename, output_csv):
     with open(filename, 'r') as f:
-        content = f.read()
+        content = f.read().strip()
         lines = content.split('\n')
         moves = []
         pikafishHelper = PikafishHelper()
@@ -35,7 +35,6 @@ def analyzeFenFile(filename, output_csv):
             fen = lines[i]
             nextFen = lines[i+1]
             p,move = getMove(fen,nextFen)
-
             response = pikafishHelper.go2(moves)
             moves.append(move)
             # 找到最好的走法
@@ -72,7 +71,19 @@ def analyzeFenFile(filename, output_csv):
             dict_writer.writeheader()
             dict_writer.writerows(results)
 
+def debug(filename):
+    with open(filename, 'r') as f:
+        content = f.read().strip()
+        lines = content.split('\n')
+        for i in range(len(lines)-1):
+            fen = lines[i]
+            nextFen = lines[i+1]
+            print(i)
+            print(fen)
+            print(nextFen)
+            p,move = getMove(fen,nextFen)
 
 if __name__ == '__main__':
-    analyzeFenFile('20240427230906.txt', 'output.csv')
+    analyzeFenFile('../qipu/20240427230906fen.txt', '../qipu/20240427230906fen.csv')
+    # debug('../qipu/20240427230906fen.txt')
 

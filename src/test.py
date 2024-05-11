@@ -1,41 +1,26 @@
-from pikafishHelper import PikafishHelper
-from tools import getMove,lastFenAndMove2Qp
+# 读取之前的错误fen文件，改成正确的fen文件
 
-
-def anaylizeFenFile(filename):
-    with open(filename, 'r') as f:
-        content = f.read()
-        lines = content.split('\n')
-        moves = []
-        pikafishHelper = PikafishHelper()
-        for i in range(len(lines)-1):
-            fen = lines[i]
-            nextFen = lines[i+1]
-            p,move = getMove(fen,nextFen)
-            
-            response = pikafishHelper.go2(moves)
-            moves.append(move)
-            # 找到最好的走法
-            parsedResp = pikafishHelper.parseGoResponse(response)
-            print('推荐走法:', lastFenAndMove2Qp(fen,parsedResp[0]['moves'][0]))
-            print('得分:', parsedResp[0]['score'])
-            # 找到我的走法，在所有的走法中的排名
-            # 默认是最后一名，即所有答案以外的答案
-            myRank = -1
-            print('我的走法:', lastFenAndMove2Qp(fen,move))
-            # print('all moves:', [resp['moves'][0] for resp in parsedResp])
-            # print(parsedResp)
-            for idx,resp in enumerate(parsedResp):
-                if resp['moves'][0] == move:
-                    myRank = idx+1
-                    break
-            print('我的选择排名:', myRank)
-            if myRank != -1:
-                print('得分:', parsedResp[myRank-1]['score'])
-            else:
-                print('我的选择不在最佳走法中')
-            print('-------------------')
-
+def fixFen(filename, outputFilename):
+    # 按行读取文件
+    # 读到的每一行，都是一个fen，类似这样的：
+    # rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR
+    # 先用‘/’拆分，再倒序，再用‘/’连接起来
+    # 然后目前大写的字母，改成小写的字母；小写的字母，改成大写的字母
+    # 最后，写入到新的文件中
+    with open(filename, 'r') as f, open(outputFilename, 'w') as out:
+        for line in f:
+            # 去除行尾的换行符
+            line = line.strip()
+            # 使用'/'拆分行
+            parts = line.split('/')
+            # 倒序
+            parts.reverse()
+            # 使用'/'连接起来
+            new_line = '/'.join(parts)
+            # 大写字母改成小写字母，小写字母改成大写字母
+            new_line = new_line.swapcase()
+            # 写入到新的文件中
+            out.write(new_line + '\n')
 
 if __name__ == '__main__':
-    anaylizeFenFile('20240427230906.txt')
+    fixFen('../qipu/20240427230906.txt', '../qipu/20240427230906fen.txt')
