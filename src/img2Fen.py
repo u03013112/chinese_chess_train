@@ -227,7 +227,9 @@ class Img2Fen:
         self.boardRect = (boardX1*2-20, boardY1*2-20, boardX2*2+20, boardY2*2+40)
         return 'ok'
 
-    def getFenFromImg(self, img):
+    # isYoloOutput,返回yolo的格式输出
+    # 其中名字分类直接用self.lstNameMap来做，按顺序，从0开始
+    def getFenFromImg(self, img, isYoloOutput=False):
         # 标准分辨率会比较大，缩小一倍不影响识别，并且会加快识别速度
         img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
         
@@ -281,7 +283,51 @@ class Img2Fen:
             fen += '/'
         fen = fen[:-1]
 
+        if isYoloOutput:
+            # 将棋盘中每一个棋子作为一行
+            # 每一行的格式类似 ：45 0.479492 0.688771 0.955609 0.5955
+            # 第一个数字是类别，按照self.lstNameMap的key的顺序，从0开始
+            # 后面四个数字是中心点的坐标，以及宽高，都是相对于整个图片的比例，即左上角是(0,0)，右下角是(1,1)
+            yoloRet = []
+            imgHeight, imgWidth = img.shape[:2]
+            for name, (x1, y1, x2, y2) in zip(lstName, lstRect):
+                piece_class = list(self.lstNameMap.keys()).index(name)
+                centerX = (x1 + x2) / 2.0 / imgWidth
+                centerY = (y1 + y2) / 2.0 / imgHeight
+                width = abs(x2 - x1) / imgWidth
+                height = abs(y2 - y1) / imgHeight
+                yoloRet.append(f"{piece_class} {centerX} {centerY} {width} {height}")
+
+            return fen, "\n".join(yoloRet)
+
         return fen
+    
+    def yoloCheck(self, img, yoloStr):
+        imgHeight, imgWidth = img.shape[:2]
+        yoloLines = yoloStr.split("\n")
+
+        for line in yoloLines:
+            parts = line.split()
+            piece_class = int(parts[0])
+            centerX = float(parts[1]) * imgWidth
+            centerY = float(parts[2]) * imgHeight
+            width = float(parts[3]) * imgWidth
+            height = float(parts[4]) * imgHeight
+
+            x1 = int(centerX - width / 2)
+            y1 = int(centerY - height / 2)
+            x2 = int(centerX + width / 2)
+            y2 = int(centerY + height / 2)
+
+            piece_name = list(self.lstNameMap.values())[piece_class]
+
+            cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(img, piece_name, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)
+
+        cv2.imshow("Image", img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
 
 if __name__ == '__main__':
     # from PIL import ImageGrab
@@ -295,5 +341,8 @@ if __name__ == '__main__':
     img2fen.getBoardRect(img1)
     print(img2fen.boardRect)
 
-    fen = img2fen.getFenFromImg(img1)
-    print(fen)    
+    fen,yoloStr = img2fen.getFenFromImg(img1, isYoloOutput=True)
+    print(fen)
+
+    img2fen.yoloCheck(img1, yoloStr)
+    
