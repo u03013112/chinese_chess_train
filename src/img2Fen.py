@@ -328,6 +328,14 @@ class Img2Fen:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
+    def getYoloNames(self):
+        nameList = list(self.lstNameMap.values())
+        print('name:')
+        for i in range(len(nameList)):
+            name = nameList[i]
+            print(f"{i}: {name}")
+
+
 
 if __name__ == '__main__':
     # from PIL import ImageGrab
@@ -335,14 +343,16 @@ if __name__ == '__main__':
     # imgNp = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
     # imgNp.save('screen.png')
     img2fen = Img2Fen()
-    img2fen.init('cc3.png')
+    # img2fen.init('cc3.png')
 
-    img1 = cv2.imread('cc3.png')    
-    img2fen.getBoardRect(img1)
-    print(img2fen.boardRect)
+    # img1 = cv2.imread('cc3.png')    
+    # img2fen.getBoardRect(img1)
+    # print(img2fen.boardRect)
 
-    fen,yoloStr = img2fen.getFenFromImg(img1, isYoloOutput=True)
-    print(fen)
+    # fen,yoloStr = img2fen.getFenFromImg(img1, isYoloOutput=True)
+    # print(fen)
 
-    img2fen.yoloCheck(img1, yoloStr)
+    # img2fen.yoloCheck(img1, yoloStr)
+
+    print(img2fen.getYoloNames())
     

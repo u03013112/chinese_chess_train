@@ -12,6 +12,8 @@ class Export:
         self.img2fen.init()
         self.fenList = []
         self.moveList = []
+        self.imgList = []
+        self.yoloStrList = []
         self.filename = filename or datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.txt'
         self.lastFrame = None
         self.lastFrameProcessed = False
@@ -52,11 +54,15 @@ class Export:
         else:
             return not self.lastFrameProcessed
 
-    def exportFen(self, img):
+    def exportFen(self, img, isYoloOutput=False):
         if not self.isNeedDetect(img):
             return None
 
-        fen = self.img2fen.getFenFromImg(img)
+        if isYoloOutput:
+            fen,yoloStr = self.img2fen.getFenFromImg(img, isYoloOutput=True)
+        else:
+            fen = self.img2fen.getFenFromImg(img)
+
         if not self.fenList or fen != self.fenList[-1]:
             if len(self.fenList) > 0:
                 lastFen = self.fenList[-1]
@@ -72,10 +78,20 @@ class Export:
                             self.moveList[-2]['move'] += move
                             self.moveList.pop()
                             self.fenList.pop()
+                            if isYoloOutput:
+                                self.imgList.pop()
+                                self.yoloStrList.pop()
 
                         self.fenList.append(fen)
+                        if isYoloOutput:
+                            self.imgList.append(img)
+                            self.yoloStrList.append(yoloStr)
             else:
                 self.fenList.append(fen)
+                if isYoloOutput:
+                    self.imgList.append(img)
+                    self.yoloStrList.append(yoloStr)
+
         self.lastFrameProcessed = True
         return self.fenList[-1]
 
@@ -118,6 +134,44 @@ def test(video_filename):
     exporter.save()
     cap.release()
 
+def yoloDataCreate(video_filename):
+    exporter = Export()
+    cap = cv2.VideoCapture(video_filename)
+
+    if not cap.isOpened():
+        print("Error: Could not open video file.")
+        return
+
+    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # 读取第一帧
+    ret, frame = cap.read()
+    frame = cv2.resize(frame, (w*2, h*2))
+
+    # 检测棋盘
+    if exporter.detectBoard(frame):
+        print("棋盘检测成功，开始导出棋谱。")
+
+        while ret:
+            exporter.exportFen(frame, isYoloOutput=True)
+            ret, frame = cap.read()
+            if frame is not None:
+                frame = cv2.resize(frame, (w*2, h*2))
+    else:
+        print("棋盘检测失败，请重试。")
+
+    exporter.save()
+    cap.release()
+
+    for i in range(len(exporter.imgList)):
+        print(i)
+        img = exporter.imgList[i]
+        cv2.imwrite(f'../yolo/images/{i}.jpg', img)
+        with open(f'../yolo/labels/{i}.txt', 'w') as f:
+            f.write(exporter.yoloStrList[i])
+
 if __name__ == '__main__':
     video_filename = "../screenSnapshot/2024-05-11_12-24-13.avi"
-    test(video_filename)
+    # test(video_filename)
+    yoloDataCreate(video_filename)
