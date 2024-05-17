@@ -1,26 +1,36 @@
-# 读取之前的错误fen文件，改成正确的fen文件
+import cv2
+from ultralytics import YOLO
 
-def fixFen(filename, outputFilename):
-    # 按行读取文件
-    # 读到的每一行，都是一个fen，类似这样的：
-    # rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR
-    # 先用‘/’拆分，再倒序，再用‘/’连接起来
-    # 然后目前大写的字母，改成小写的字母；小写的字母，改成大写的字母
-    # 最后，写入到新的文件中
-    with open(filename, 'r') as f, open(outputFilename, 'w') as out:
-        for line in f:
-            # 去除行尾的换行符
-            line = line.strip()
-            # 使用'/'拆分行
-            parts = line.split('/')
-            # 倒序
-            parts.reverse()
-            # 使用'/'连接起来
-            new_line = '/'.join(parts)
-            # 大写字母改成小写字母，小写字母改成大写字母
-            new_line = new_line.swapcase()
-            # 写入到新的文件中
-            out.write(new_line + '\n')
+modelFile = '/Users/u03013112/.pyenv/runs/detect/train6/weights/last.pt'
+# Load a pretrained YOLOv8n model
+model = YOLO(modelFile)
 
-if __name__ == '__main__':
-    fixFen('../qipu/20240427230906.txt', '../qipu/20240427230906fen.txt')
+# Read an image using OpenCV
+source = cv2.imread('/Users/u03013112/Documents/git/chinese_chess_train/yolo/images/val/2.jpg')
+source = cv2.resize(source, (320, 320))
+
+names = {0: 'A', 1: 'K', 2: 'B', 3: 'N', 4: 'P', 5: 'C', 6: 'R', 7: 'a', 8: 'c', 9: 'r', 10: 'p', 11: 'k', 12: 'b', 13: 'n'}
+
+# Run inference on the source
+results = model(source)  # list of Results objects
+
+# Get the height and width of the image
+height, width = source.shape[:2]
+
+for result in results:
+    # Get the bounding boxes and their labels
+    boxes = result.boxes.xyxy  # box with xyxy format, (N, 4)
+    labels = result.boxes.cls  # cls, (N, 1)
+
+    # Draw the bounding boxes and labels on the image
+    for i in range(len(boxes)):
+        x1, y1, x2, y2 = [int(x) for x in boxes[i]]
+        label = labels[i]
+        name = names[int(label.item())]
+        cv2.rectangle(source, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.putText(source, name, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)
+
+# Display the image
+cv2.imshow('Image', source)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
