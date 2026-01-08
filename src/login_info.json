@@ -1,0 +1,30 @@
+{
+  "cookies": [],
+  "localStorage": {
+    "qqchess_webToken_wx_openID": "\"oiEA9s61JWxdd_bFWKVviF8ZlDok\"",
+    "qqchess_webToken_wx": "\"99_lTqgSc07MduD_gfQD2e5fLHb6FPnG8ODT60vN-JTLG6HuYW9_D8a0vvO-cj4O6NNQn1yCYMhuiRuAtuQ9zYviGLJ1aIiXewM1UDy_Iha4-Y\"",
+    "WEB_CODE_STATES_FOR_GETTING": "false",
+    "GuPuIsUpdateConf": "false",
+    "qqchess_webToken_wx_expireTime": "1767098768.199",
+    "qqchess_open_plat_type": "1",
+    "IsPermissionGrant": "true",
+    "UsingPlatformAutoLoginMode": "false",
+    "UpdateConfigMD5": "\"a25a35281b6e31d739356249a80f91bc\"",
+    "ForceUploadLocalQipuTask": "false",
+    "SELF_PLAYER_INFO": "\"{\\\"tUserID\\\":{\\\"uUin\\\":577623960,\\\"sOpenID\\\":\\\"oiEA9s61JWxdd_bFWKVviF8ZlDok\\\",\\\"iOpenPlatType\\\":0,\\\"iMobilePlatType\\\":1,\\\"iVipID\\\":0,\\\"iAppGameType\\\":0},\\\"sName\\\":\\\"京\\\",\\\"sHeadUrl\\\":\\\"https://thirdwx.qlogo.cn/mmopen/vi_32/Q0j4TwGTfTInqSaVmnIflmicKNUOdpnoOiaiaHOIyLcm1UFtx3mQUtBibwupvGsgkgfdZklTowoic2PgTKcuZGlAM7g/96\\\",\\\"iSex\\\":0,\\\"iVipFlag\\\":0,\\\"iIconType\\\":0,\\\"xqQiliLevel\\\":-50,\\\"xqScoreLevel\\\":-200,\\\"jqQiliLevel\\\":0,\\\"sRealName\\\":\\\"\\\"}\"",
+    "RefreshQipuWall": "true",
+    "IsClearCachReportDataV4.3.0.3": "false",
+    "IsAskPermissionoiEA9s61JWxdd_bFWKVviF8ZlDok": "true",
+    "iniRequestTimestamp": "1767091568140",
+    "AgreeUserAgreement": "true",
+    "HOT_UPDATE_CHECK_UIN": "577623960",
+    "ConfigData_VERSION": "\"4303_117078\"",
+    "AgreementTTXQPrivacyTipsChange": "true",
+    "qqchess_webToken_wxRefresh": "\"99_ocCngS5AXRGp3DUagBPHv2oEqFoF5aSOo03isbxIYkm_BJV143QuRlwzlKIQZ_pXcVE6ucZf75J6SCnb9BkK9aTd68Z_d_h9aSKRUohEb7k\"",
+    "qqchess_webToken_wxRefresh_expireTime": "1769682962.788"
+  },
+  "sessionStorage": {
+    "code": ""
+  },
+  "url": "https://h5login.qqchess.qq.com/"
+}
