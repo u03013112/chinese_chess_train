@@ -92,9 +92,9 @@ See `src/pikafish.md` for detailed UCI protocol documentation.
 
 ### Position Analysis Pipeline
 
-1. **Export/Capture** (`src/export.py`, `src/screenSnapShot.py`)
-   - Capture chess positions from screen (e.g., from 天天象棋 app)
-   - Convert images to board state
+1. **Export/Capture**
+   - `src/export.py`, `src/screenSnapShot.py` — capture chess positions from screen (legacy image-recognition path)
+   - **Playwright H5 API route (current, 2026-05-03+)** — hook `fdk.Joa.ba('NOTIFY_QIPU_DATA', ...)` on the Cocos H5 client and call `QipuModel.requestGetQipuInfo(id)` to pull structured JSON with compressed moves; land payloads at `qipu/raw/<qipuId>.json`. See `docs/playwright_interactive_exploration.md` and `src/qipu2txt.py`.
 
 2. **Image Recognition** (`src/img2Fen.py`, `src/img2FenByYolo.py`)
    - SIFT-based piece detection (legacy)

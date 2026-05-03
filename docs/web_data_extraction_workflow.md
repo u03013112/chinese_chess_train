@@ -1,5 +1,27 @@
 # 网页数据提取工作流
 
+> ## ⚠️ 部分章节已作废（2026-05-03）
+>
+> 本文当初作为"通用方法论 + 天天象棋实战"合一写成。实战部分已在 2026-05-03 全面重做,**凡是涉及天天象棋登录、Cocos 点击、棋谱抓取的操作细节,一律以 [`playwright_interactive_exploration.md`](./playwright_interactive_exploration.md) 为准。**
+>
+> **本文仍然有效的部分**(通用方法论,可复用到其他网站):
+> - § 核心需求 / 技术选型对比(方案 A/B/C/D 比较)
+> - § 通用化:适配其他网站(React/Vue/Unity/Phaser 探测)
+> - § 最佳实践 / 故障排查 / 扩展应用(与具体网站无关的部分)
+>
+> **本文已作废的部分**(与新文档冲突,见章节内标注):
+> - § 实战:天天象棋棋谱提取 → 作废,用新文档
+> - 推荐使用 `chess_explorer.py` 的叙述 → 该脚本实际未跑通,已废弃
+> - 触摸事件相关片段(本文未直接提,但 §"Cocos 场景树" 历史结论"DOM 事件不被处理"是错的,桌面 Chromium 必须用 `MouseEvent`)
+>
+> 新文档 `playwright_interactive_exploration.md` 已包含:
+> - 实测坐标转换公式 + 双重可视化调试法
+> - `MouseEvent` 点击(替代 `TouchEvent`)
+> - 当前登录 UI 真实结构(`StartBtn_1` 重名 + y 排序区分微信/QQ)
+> - Token 过期、系统代理冲突、Label 基线偏移等踩过的坑
+
+---
+
 ## 项目背景
 
 在使用天天象棋等网页应用时，经常遇到官方不提供数据导出功能的情况。例如：
@@ -162,6 +184,16 @@ Playwright Chrome（探索用）
 
 ## 实战：天天象棋棋谱提取
 
+> **⚠️ 本整章已作废(2026-05-03)**
+> 以下操作细节(探索页面结构、`chess_explorer.py` 使用步骤、场景树遍历具体代码)在 2026-05-03 重新验证时发现部分结论错误或已过时,请改用 [`playwright_interactive_exploration.md`](./playwright_interactive_exploration.md) 的最新版本。
+>
+> **具体问题**:
+> - `chess_explorer.py` 本身未跑通,用 `page.locator('text=...')` 找 Canvas 里的文字行不通
+> - 登录流程现在直接用 `StartBtn_1`(两个重名,按 y 排序取上面是微信),不走 `NodeQRLogin → btnQRWX`
+> - 登录相关的点击必须用 `MouseEvent` 不是 `TouchEvent`
+>
+> **仍可参考**的只有末尾"第7个数组 `$a.Sg`"这个线索 — UCI moves 数组的疑似位置。
+
 ### 第一阶段：探索页面结构
 
 #### 1. 识别页面框架
@@ -290,6 +322,8 @@ window.__results[7].ref  // 需要修改代码保存引用
 ---
 
 ### 使用步骤
+
+> **⚠️ 作废(2026-05-03)**:下面推荐运行 `chess_explorer.py`,但该脚本实际未跑通。当前可用的做法是直接在 Playwright MCP 中 `evaluate` JS,详见 [`playwright_interactive_exploration.md`](./playwright_interactive_exploration.md)。
 
 #### 安装依赖（一次性）
 
@@ -850,6 +884,6 @@ python src/AnaylizeFenFile.py qipu/chess_data.json
 
 ---
 
-*文档版本：v1.0*
-*最后更新：2025-12-30*
+*文档版本：v1.0（实战章节已于 v1.1 标注作废,通用方法论部分仍有效）*
+*最后更新：2026-05-03（追加作废标注,实战内容迁移到 playwright_interactive_exploration.md）*
 *作者：通过 Claude Code 生成*

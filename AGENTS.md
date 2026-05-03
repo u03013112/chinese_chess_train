@@ -1,189 +1,138 @@
 # AGENTS.md
 
-Guidelines for AI coding agents working in this Chinese Chess (Xiangqi) training system.
+Notes for AI agents working in this Chinese Chess (Xiangqi) training repo. Covers only things you would otherwise get wrong. Companion doc `CLAUDE.md` has more prose background — read it if you need more context.
 
-## Project Overview
+## What this repo is
 
-Chinese Chess training system: screenshot recognition (OpenCV + YOLO), position analysis (Pikafish UCI engine), checkmate puzzles, and GUI tools.
+A personal training pipeline, not a product. Flow:
+`screen capture/scrape` → `image → FEN` → `Pikafish UCI analysis` → `CSV` → `tkinter GUIs` for review and puzzle drills.
 
-**Stack:** Python 3.11, tkinter, OpenCV, ultralytics (YOLO), pandas, numpy
+No package metadata (`pyproject.toml`, `setup.py`), no lockfile, no tests, no CI, no formatter/linter config. Do not invent them unless asked.
 
-## Build & Run Commands
+## Layout you need to know
 
-### Docker Environment
+- `src/` — all Python. Flat module layout, all imports are by bare module name (`from tools import ...`). Run scripts from inside `src/` or with `src/` on `sys.path`.
+- `qipu/` — game records. `.txt` files are line-per-FEN sequences; `.csv` files are Pikafish analysis output (produced by `AnaylizeFenFile.py`). `qipu/raw/<qipuId>.json` holds the structured payload fetched from 天天象棋 H5 (via `fdk.Joa.ba('NOTIFY_QIPU_DATA', ...)` hook — see `docs/playwright_interactive_exploration.md`); `qipu/raw_legacy/` keeps earlier hand-massaged JSON shapes for reference.
+- `yolo/` — YOLOv8 training data + `coco8.yaml` (dataset expected at `~/datasets`). Trained weights live under `~/.pyenv/runs/detect/trainN/weights/` after running `yolo train`.
+- `img/` — piece templates used by the legacy SIFT recognizer only.
+- `screenSnapshot/` — recorded `.avi` clips (gitignored-ish; `*.avi` ignored).
+- `docker/` — Docker runtime for the Linux/engine side (lowercase `dockerfile` + `makefile`, not the defaults).
+- `docs/`, `src/*.md`, `yolo/train.md` — design notes in Chinese, mostly aspirational. Trust code over these notes when they conflict.
+
+## Running things
+
+### Local (macOS) — GUIs and most dev work
+
 ```bash
-cd docker && make all                    # Build Docker image
-docker-compose up -d                     # Start services
-docker exec -it chinese_chess python /src/script_name.py  # Run scripts
+python src/history.py      # review analyzed games (reads qipu/*.csv)
+python src/lookKillUI.py   # checkmate puzzle trainer (reads qipu/*.csv)
+python src/exportUI.py     # screen capture → FEN export (tkinter)
+python src/tools.py        # smoke test for FEN / move utilities
 ```
 
-### GUI Apps (run locally on macOS)
+GUI apps assume CWD is `src/` because they read `../qipu` (see `LookKill.__init__`). `cd src && python history.py` is the safe invocation.
+
+### Docker (Linux, for running the engine alongside the app)
+
 ```bash
-python src/history.py      # Game review
-python src/lookKillUI.py   # Checkmate trainer
-python src/exportUI.py     # Position export
+cd docker && make all                         # build u03013112/chinese_chess_train:v1
+cd docker && docker-compose up -d              # starts `pikafish` + `chinese_chess` containers
+docker exec -it chinese_chess python /src/pikafish.py
 ```
 
-### YOLO Training
+`docker/docker-compose.yml` mounts `../src` → `/src` and gives `chinese_chess` `privileged: true` + `/proc:/host/proc`. This is required because `pikafish.py` defaults to:
+
+```
+nsenter --mount=/host/proc/1/ns/mnt docker exec -i pikafish /app/pikafish
+```
+
+i.e. the app container shells out of itself via `nsenter` to reach the sibling `pikafish` container. Do not "simplify" this without understanding the topology.
+
+### YOLO training (Apple Silicon)
+
 ```bash
 yolo train data=coco8.yaml model=yolov8n.pt epochs=300 lr0=0.01 device=mps
+yolo detect predict model=<…>/weights/last.pt source=yolo/images/val/2.jpg
 ```
 
-### Testing
+### Scraping 天天象棋 (Playwright + Chrome CDP)
 
-**No automated tests configured.** Manual testing only:
 ```bash
-python src/tools.py                                        # Test FEN utilities
-docker exec -it chinese_chess python /src/pikafish.py      # Test engine connection
+bash start_chess_chrome.sh              # launches Chrome with --remote-debugging-port=9222
+python src/extract_chess_data.py        # or: chrome_debug.py / chess_explorer.py / auto_nav.py
 ```
 
-## Code Style Guidelines
+These scripts talk to a live Chrome via CDP and introspect the Cocos scene (`cc.director.getScene()`). They need a real logged-in session; `src/login_info.json` and `src/chrome_data/` persist browser state and are not in git.
 
-### Naming Conventions
+**None of the standalone `.py` scrapers above have produced a real 棋谱 end-to-end** (the pre-2026 `qipu/` CSVs were made by the old image-recognition path). The current working approach is Playwright MCP `evaluate` driven interactively — the canonical playbook (coordinate formula, `MouseEvent` click channel, `StartBtn_1` disambiguation, `fdk.Joa.ba` event hook for the `QipuModel.requestGetQipuInfo` API, etc.) is in [`docs/playwright_interactive_exploration.md`](docs/playwright_interactive_exploration.md). Treat the `.py` scrapers as historical scaffolding, not a recommended entrypoint. `docs/web_data_extraction_workflow.md` keeps only the generic cross-site methodology; its 天天象棋-specific sections are marked 作废.
 
-| Element | Style | Examples |
-|---------|-------|----------|
-| Classes | PascalCase | `ChessBoard`, `PikafishHelper`, `Img2FenByYolo` |
-| Functions/Methods | camelCase | `sendCMD()`, `getBoardRect()`, `getFenFromImg()` |
-| Variables | camelCase | `boardRect`, `fenList`, `moveFrom` |
-| Constants | lowercase with camelCase | `pNameList` (not PEP8 UPPER_SNAKE_CASE) |
+The H5 API route produces `qipu/raw/<qipuId>.json` (each payload contains `sData` — a JSON string with `moveinfo.binit` + `moveinfo.movelist`, where `movelist` is a compressed `fx fy tx ty` string, 4 chars per ply). `src/qipu2txt.py` converts these into the `qipu/<qipuId>.txt` (one FEN per line) format that `AnaylizeFenFile.py` expects, and is also backward-compatible with the older `{startFen, moves:[[fx,fy,tx,ty]...]}` shape under `qipu/raw_legacy/`. Run `cd src && python3 qipu2txt.py smoke` for a quick sanity check, or `python3 qipu2txt.py` to batch-convert everything under `qipu/raw/`.
 
-**Note:** This project uses camelCase (not PEP8 snake_case) for functions and methods.
+## Dependencies — there is no canonical list
 
-### Import Organization
+`docker/requirements.txt` contains only `opencv-contrib-python`. The rest are implicit. Actually imported across `src/`:
 
-Standard library first, then third-party, then local modules:
-```python
-import os
-import time
-import subprocess
+- `cv2`, `numpy`, `pandas`, `tkinter` (stdlib on a full Python)
+- `ultralytics` (`img2FenByYolo.py`)
+- `pynput`, `mss`, `PIL` (`screenSnapShot.py`)
+- `playwright`, `requests`, `websocket` (scrapers)
 
-import cv2
-import numpy as np
-import pandas as pd
+If `pip install` fails inside the Docker image, it is expected — add to `docker/requirements.txt` or install ad-hoc.
 
-from pikafish import Pikafish
-from tools import getMove
-```
+## Pikafish wiring (high-gotcha)
 
-### Type Hints
+- `src/pikafish.py` — raw subprocess wrapper with non-blocking stdout (`fcntl` + `select`). Default command assumes Docker/`nsenter`.
+- `src/pikafishHelper.py` — high-level interface. **Hard-codes a macOS path:**
 
-Not used in this codebase. When adding new code, type hints are optional but welcome.
+  ```python
+  self.pikafish = Pikafish('/Users/u03013112/Documents/git/Pikafish/src/pikafish')
+  ```
 
-### Error Handling
+  Any other user / machine must edit this or the module fails at import-time call. On Linux it falls through to the default `nsenter` command.
+- Default options pushed on init: `Threads=8`, `MultiPV=20`, search `depth=10`.
+- `parseGoResponse` returns up to MultiPV entries sorted by score desc. Mate scores are synthesized: `10000 - mateStepCount*100` (win) or `-10000 - mateStepCount*100` (loss). The `9000` threshold in `lookKill.py` relies on this mapping — do not change one without the other.
 
-Use `ValueError` with descriptive f-string messages (Chinese comments acceptable):
-```python
-if diff_count > 2:
-    raise ValueError(f"变化的数量太多了, diff_count={diff_count}")
+## FEN / coordinate conventions (READ CAREFULLY)
 
-if pLast != p:
-    raise ValueError(f"棋子发生了变化, {pLast} => {p}")
-```
+The README explicitly flags a historical inversion bug. The **correct, UCI-native** convention, which `tools.py`, `pikafishHelper.py`, `pikafish.md`, and the Pikafish engine all use:
 
-### Docstrings & Comments
+- **Uppercase = Black** (top of board), **lowercase = Red** (bottom).
+- FEN rows are listed **top-to-bottom** (black side first, red side last).
+- Starting position: `rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR`.
+- Board is 9×10, files `a`–`i`, ranks `0`–`9`. A UCI move is 4 chars, e.g. `h2e2`.
+- `ChessBoard.py::readFen` contains an **inverted color mapping** (`'黑' if char.isupper() == False else '红'` + a commented-out `y = (10 - int(pos[1]))` swap) that is part of the old bug. If you touch board rendering, verify against a known position, do not trust the widget as a reference.
 
-- Comments are primarily in Chinese
-- No formal docstring convention (no module/function docstrings)
-- Inline comments explain complex logic:
-```python
-# 按照中国象棋的规则，棋子是不能凭空消失的
-# 找到 红车 与 黑车 的位置，以此确定棋盘的位置
-```
+`tools.getMove(lastFen, fen)` returns `(piece_char, uci_move)` and raises `ValueError` if more than two squares changed or a piece "morphed" — do not silently `except`; it is the main integrity check in the pipeline.
 
-### Class Structure
+`tools.lastFenAndMove2Qp(fen, move)` converts a move to Chinese notation (`红 炮二平五`) using `pNameList`. It is incomplete for some piece types (notation for 兵/卒 and diagonal cases is approximate).
 
-```python
-class ClassName:
-    def __init__(self, param="default"):
-        self.attribute = value
-    
-    def publicMethod(self):
-        pass
-    
-    def _privateMethod(self):  # underscore for internal methods
-        pass
+## Module map — who calls whom
 
-if __name__ == '__main__':
-    # Direct execution code
-    instance = ClassName()
-```
+GUIs: `history.py`, `lookKillUI.py`, `exportUI.py` → `ChessBoard.py` + `tools.py` + (`lookKill.py` | `export.py`)
+Analysis: `AnaylizeFenFile.py` → `pikafishHelper.py` → `pikafish.py`; also `tools.py`
+Recognition: `export.py` → `img2Fen.py` (SIFT, legacy); `img2FenByYolo.py` is the YOLO replacement but `export.py` still imports the legacy one
+Qipu import (H5 API route): Playwright `evaluate` hook → `qipu/raw/<qipuId>.json` → `qipu2txt.py` → `qipu/<qipuId>.txt` → `AnaylizeFenFile.py` → `qipu/<qipuId>.csv`
+Scrapers (standalone, Playwright, historical): `chess_explorer.py`, `auto_nav.py`, `extract_chess_data.py`, `analyze_login.py`, `chrome_debug.py`
 
-## Critical Domain Knowledge
+## Style conventions (differ from Python defaults)
 
-### FEN Notation (IMPORTANT)
+- **camelCase** for functions/methods/variables (`sendCMD`, `getFenFromImg`, `boardRect`). Do not "fix" to PEP8.
+- Classes are PascalCase.
+- Module-level constants are camelCase too (`pNameList`), not `UPPER_SNAKE`.
+- Imports: stdlib → third-party → local (bare names). No `__init__.py`; no package prefixes.
+- No type hints, no docstrings. Comments are Chinese; keep new comments in Chinese when editing existing Chinese-commented code.
+- Errors: `raise ValueError(f"…")` with a Chinese message, consistent with `tools.py` and `export.py`.
 
-**Known Issue:** The FEN interpretation was historically incorrect. Be careful with piece colors:
+## Things that look wrong but are intentional
 
-- **Lowercase letters = Red pieces** (player at bottom)
-- **Uppercase letters = Black pieces** (opponent at top)  
-- Rows in FEN are listed top-to-bottom (black side to red side)
-- Starting position: `rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR`
+- `docker/dockerfile` and `docker/makefile` are lowercase. `make` still finds `makefile`; `docker build` finds `dockerfile` via default search. Do not rename without updating both scripts and muscle memory.
+- `sync.sh` is a personal `fswatch + rsync` loop to a specific LAN host (`root@192.168.40.62`). Ignore unless you own that host.
+- `.history/`, `chrome_data/`, `*.avi` are ignored. The committed `.history/` entries in `.gitignore` is intentional.
+- `CLAUDE.md` duplicates some of this. Treat it as supplementary; keep AGENTS.md as the source of truth when they drift.
 
-### UCI Coordinate System
+## Tasks that are NOT supported
 
-- Board is 9x10 (columns a-i, rows 1-10)
-- Bottom-left is `a1`, top-right is `i10`
-- Moves are 4 characters: `h2e2` (from h2 to e2)
-
-### Magic Numbers
-
-- `9000`: Score threshold indicating forced checkmate
-- `10`: Default engine analysis depth
-- `3`: Default MultiPV value for top moves
-
-## Key Files Reference
-
-| File | Purpose |
-|------|---------|
-| `src/pikafish.py` | UCI engine subprocess wrapper |
-| `src/pikafishHelper.py` | High-level engine interface |
-| `src/tools.py` | FEN/move utilities, coordinate conversion |
-| `src/ChessBoard.py` | tkinter chess board widget |
-| `src/img2FenByYolo.py` | YOLO-based piece detection (current) |
-| `src/img2Fen.py` | SIFT-based piece detection (legacy) |
-| `src/AnaylizeFenFile.py` | Position analysis pipeline |
-| `src/lookKill.py` | Checkmate puzzle extraction |
-| `src/history.py` | Game review GUI |
-
-## Common Tasks
-
-### Adding a New Analysis Feature
-
-1. Read position from FEN file or image
-2. Use `PikafishHelper` to query engine
-3. Parse UCI response for scores/moves
-4. Output to CSV for GUI consumption
-
-### Working with Chess Positions
-
-```python
-from tools import getMove, lastFenAndMove2Qp
-
-# Calculate move between two positions
-piece, move = getMove(fen1, fen2)  # Returns ('c', 'h2e2')
-
-# Convert to Chinese notation
-chinese = lastFenAndMove2Qp(fen1, move)  # Returns '红 炮二平五'
-```
-
-### GUI Development
-
-Inherit from `ChessBoard` for new chess displays:
-```python
-from ChessBoard import ChessBoard
-
-class MyChessApp(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.board = ChessBoard(self, style=2)  # UCI style
-        self.board.pack()
-```
-
-## File Locations
-
-- **Source code:** `src/`
-- **Game records:** `qipu/` (FEN and CSV files)
-- **Chess piece images:** `img/` (for SIFT detection)
-- **YOLO training data:** `yolo/` (images and labels)
-- **Docker config:** `docker/`
+- No automated tests, pytest config, or test runner. Do not add one without being asked.
+- No linter/formatter. Do not run `black`/`ruff`/`isort` over the tree.
+- No packaging. `pip install -e .` will not work.
+- No CI. `.github/workflows/` does not exist.
