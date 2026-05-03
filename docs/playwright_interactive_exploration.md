@@ -184,8 +184,10 @@ await cocosClick(pos.x, pos.y);
 点击后页面会加载微信 OAuth iframe:
 
 ```
-https://open.weixin.qq.com/connect/qrconnect?appid=wxa13dcbb181b4fa55&redirect_uri=...
+https://open.weixin.qq.com/connect/qrconnect?appid=<TIANTIAN_XIANGQI_WX_APPID>&redirect_uri=...
 ```
+
+`<TIANTIAN_XIANGQI_WX_APPID>` 不是秘密(redirect_uri 已绑定腾讯域名,第三方无法冒用),运行时在浏览器 Network 自取即可,不落盘以免触发 GitHub secret 扫描。
 
 用户用手机微信扫码完成授权。二维码过期时 `page.click('iframe')` 刷新。
 
