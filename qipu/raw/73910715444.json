@@ -1,0 +1,262 @@
+{
+  "qipuID": 73910715444,
+  "lDataID": 73910715444,
+  "playersInfo": {
+    "0": {
+      "stTUserID": {
+        "uUin": 577623960,
+        "sOpenID": "oiEA9s61JWxdd_bFWKVviF8ZlDok",
+        "iOpenPlatType": 0,
+        "iMobilePlatType": 1,
+        "iVipID": 0,
+        "iAppGameType": 0
+      },
+      "iRankPoints": 0,
+      "stTUserInfo": {
+        "sNick": "京",
+        "sHeadUrl": "https://thirdwx.qlogo.cn/mmopen/vi_32/Q0j4TwGTfTInqSaVmnIflmicKNUOdpnoOiaiaHOIyLcm1UFtx3mQUtBibwupvGsgkgfdZklTowoic2PgTKcuZGlAM7g/96",
+        "iSex": 0,
+        "stUserID": {
+          "uUin": 577623960,
+          "sOpenID": "oiEA9s61JWxdd_bFWKVviF8ZlDok",
+          "iOpenPlatType": 0,
+          "iMobilePlatType": 1,
+          "iVipID": 0,
+          "iAppGameType": 0
+        },
+        "iRankPoints": -50,
+        "iVipFlag": 0,
+        "KV": 0,
+        "Fi": 0,
+        "z0c": "",
+        "LEc": 0,
+        "stAvatars": {
+          "vecAvatars": {
+            "proto": {
+              "iAvatarID": 0,
+              "iAvatarState": 0,
+              "iExpire": 0,
+              "iAvatarShape": 0,
+              "vecSupportGame": {
+                "proto": {
+                  "_clone": null,
+                  "_write": null,
+                  "_read": null
+                },
+                "val": []
+              },
+              "sCollectState": ""
+            },
+            "val": []
+          },
+          "stHeadFrame": {
+            "iHeadFrameID": 350000,
+            "iState": 4,
+            "iExpire": -1,
+            "iChipType": 7,
+            "iCategoryType": 15,
+            "sLevelCornerUrl": "",
+            "iLevelValue": 0,
+            "sLevelnfo": "",
+            "iAvatarLevel": 0,
+            "wp": {
+              "g1b": {
+                "_clone": null,
+                "_write": null,
+                "_read": null
+              },
+              "ncc": {
+                "_clone": null,
+                "_write": null,
+                "_read": null
+              },
+              "val": {}
+            },
+            "iLevel": 1
+          },
+          "vAvatarChips": {
+            "proto": {
+              "iHeadFrameID": 0,
+              "iState": 0,
+              "iExpire": 0,
+              "iChipType": 0,
+              "iCategoryType": 0,
+              "sLevelCornerUrl": "",
+              "iLevelValue": 0,
+              "sLevelnfo": "",
+              "iAvatarLevel": 0,
+              "wp": {
+                "g1b": {
+                  "_clone": null,
+                  "_write": null,
+                  "_read": null
+                },
+                "ncc": {
+                  "_clone": null,
+                  "_write": null,
+                  "_read": null
+                },
+                "val": {}
+              },
+              "iLevel": 1
+            },
+            "val": [
+              {
+                "iHeadFrameID": 350000,
+                "iState": 4,
+                "iExpire": -1,
+                "iChipType": 7,
+                "iCategoryType": 15,
+                "sLevelCornerUrl": "",
+                "iLevelValue": 0,
+                "sLevelnfo": "",
+                "iAvatarLevel": 0,
+                "wp": {
+                  "g1b": {
+                    "_clone": null,
+                    "_write": null,
+                    "_read": null
+                  },
+                  "ncc": {
+                    "_clone": null,
+                    "_write": null,
+                    "_read": null
+                  },
+                  "val": {}
+                },
+                "iLevel": 1
+              }
+            ]
+          },
+          "iTotalLevelValue": 0,
+          "iAvatarOpenFlag": 0
+        },
+        "tc": {
+          "iVipType": 0,
+          "iVipLevel": 0,
+          "Ecb": 180,
+          "CN": 0,
+          "iState": 0
+        },
+        "C8": true
+      },
+      "QXa": -9999
+    },
+    "1": {
+      "stTUserID": {
+        "uUin": 999999999,
+        "sOpenID": "",
+        "iOpenPlatType": 0,
+        "iMobilePlatType": 0,
+        "iVipID": 0,
+        "iAppGameType": 0
+      },
+      "iRankPoints": 0,
+      "stTUserInfo": {
+        "sNick": "小白",
+        "sHeadUrl": "Bundle-PVE:heroIcon/break_roleH_10zhanghan",
+        "iSex": 0,
+        "stUserID": {
+          "uUin": 0,
+          "sOpenID": "",
+          "iOpenPlatType": 0,
+          "iMobilePlatType": 0,
+          "iVipID": 0,
+          "iAppGameType": 0
+        },
+        "iRankPoints": 0,
+        "iVipFlag": 0,
+        "KV": 0,
+        "Fi": 0,
+        "z0c": "",
+        "LEc": 0,
+        "stAvatars": {
+          "vecAvatars": {
+            "proto": {
+              "iAvatarID": 0,
+              "iAvatarState": 0,
+              "iExpire": 0,
+              "iAvatarShape": 0,
+              "vecSupportGame": {
+                "proto": {
+                  "_clone": null,
+                  "_write": null,
+                  "_read": null
+                },
+                "val": []
+              },
+              "sCollectState": ""
+            },
+            "val": []
+          },
+          "stHeadFrame": {
+            "iHeadFrameID": 0,
+            "iState": 0,
+            "iExpire": 0,
+            "iChipType": 0,
+            "iCategoryType": 0,
+            "sLevelCornerUrl": "",
+            "iLevelValue": 0,
+            "sLevelnfo": "",
+            "iAvatarLevel": 0,
+            "wp": {
+              "g1b": {
+                "_clone": null,
+                "_write": null,
+                "_read": null
+              },
+              "ncc": {
+                "_clone": null,
+                "_write": null,
+                "_read": null
+              },
+              "val": {}
+            },
+            "iLevel": 1
+          },
+          "vAvatarChips": {
+            "proto": {
+              "iHeadFrameID": 0,
+              "iState": 0,
+              "iExpire": 0,
+              "iChipType": 0,
+              "iCategoryType": 0,
+              "sLevelCornerUrl": "",
+              "iLevelValue": 0,
+              "sLevelnfo": "",
+              "iAvatarLevel": 0,
+              "wp": {
+                "g1b": {
+                  "_clone": null,
+                  "_write": null,
+                  "_read": null
+                },
+                "ncc": {
+                  "_clone": null,
+                  "_write": null,
+                  "_read": null
+                },
+                "val": {}
+              },
+              "iLevel": 1
+            },
+            "val": []
+          },
+          "iTotalLevelValue": 0,
+          "iAvatarOpenFlag": 0
+        },
+        "tc": {
+          "iVipType": 0,
+          "iVipLevel": 0,
+          "Ecb": 0,
+          "CN": 0,
+          "iState": 0
+        },
+        "C8": true
+      },
+      "QXa": -9999
+    }
+  },
+  "sData": "{\"adddate\":\"1775733673\",\"author\":\"京\",\"classinfo\":{\"addr\":\"\",\"date\":\"1775733673\",\"round\":\"\",\"sclass\":\"\",\"sevent\":\"人机对战\",\"source\":0,\"table\":\"\"},\"ecco\":\"\",\"editdate\":\"1775733673\",\"iGameoverReason\":-1,\"intro\":\"\",\"moveinfo\":{\"binit\":\"8979695949392919097717866646260600102030405060708012720323436383\",\"chessmanpower\":{\"iFinalDeltaPower\":0,\"iMaxDeltaPower\":0,\"iMinDeltaPower\":0},\"comment\":{},\"commentv2\":{},\"curfen\":\"\",\"curpos\":\"\",\"firstnum\":0,\"length\":0,\"mErrMove\":{},\"mllessons\":[],\"movelist\":\"774712427967102289797262797362666987708226258070738300101927707529074241171575763948660609394161270661671519767819296769\",\"movetag\":{},\"redmove\":0,\"steptimecosts\":[],\"vOpenInitChessman\":[]},\"open\":\"\",\"openid\":\"\",\"result\":\"0-1\",\"resultType\":0,\"sQiPuID\":\"\",\"timerule\":\"\",\"title\":\"人机对战\",\"type\":577623960,\"userinfo\":{\"black_head\":\"\",\"blackname\":\"小白\",\"blackscore\":0,\"blackteam\":\"\",\"blackuin\":0,\"red_head\":\"\",\"redname\":\"京\",\"redscore\":0,\"redteam\":\"\",\"reduin\":0}}",
+  "t": 1777822638716
+}
