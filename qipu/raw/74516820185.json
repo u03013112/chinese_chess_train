@@ -1,0 +1,18 @@
+{
+  "qipuId": 74516820185,
+  "lDataID": 74516820185,
+  "player0": {
+    "uUin": 577623960,
+    "sOpenID": "oiEA9s61JWxdd_bFWKVviF8ZlDok",
+    "sNick": "京",
+    "iRankPoints": -50
+  },
+  "player1": {
+    "uUin": 999999999,
+    "sOpenID": "",
+    "sNick": "小白",
+    "iRankPoints": 0
+  },
+  "sData": "{\"adddate\":\"1777550110\",\"author\":\"京\",\"classinfo\":{\"addr\":\"\",\"date\":\"1777550110\",\"round\":\"\",\"sclass\":\"\",\"sevent\":\"人机对战\",\"source\":0,\"table\":\"\"},\"ecco\":\"\",\"editdate\":\"1777550110\",\"iGameoverReason\":-1,\"intro\":\"\",\"moveinfo\":{\"binit\":\"8979695949392919097717866646260600102030405060708012720323436383\",\"chessmanpower\":{\"iFinalDeltaPower\":0,\"iMaxDeltaPower\":0,\"iMinDeltaPower\":0},\"comment\":{},\"commentv2\":{},\"curfen\":\"\",\"curpos\":\"\",\"firstnum\":0,\"length\":0,\"mErrMove\":{},\"mllessons\":[],\"movelist\":\"7747724279677062898880708838102238332002332300201727224123132026131241221215636466656465156562746575746209086254757026161907426267551615085862527072155558555255722250414743604227575435224202244222354322234335232455525717521224343556345456771713776913434150434512165444504144644050646916360726360626340609696050513453515260625251455541526252514152504142504030414041\",\"movetag\":{},\"redmove\":0,\"steptimecosts\":[],\"vOpenInitChessman\":[]},\"open\":\"\",\"openid\":\"\",\"result\":\"1-0\",\"resultType\":0,\"sQiPuID\":\"\",\"timerule\":\"\",\"title\":\"人机对战\",\"type\":577623960,\"userinfo\":{\"black_head\":\"\",\"blackname\":\"小白\",\"blackscore\":0,\"blackteam\":\"\",\"blackuin\":0,\"red_head\":\"\",\"redname\":\"京\",\"redscore\":0,\"redteam\":\"\",\"reduin\":0}}",
+  "t": 1777819807749
+}
