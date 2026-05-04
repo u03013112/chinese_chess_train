@@ -3,6 +3,7 @@ import json
 import time
 import tkinter as tk
 from pathlib import Path
+from tkinter import ttk
 
 from ChessBoard import ChessBoard
 from missKill import buildQuestionBank
@@ -15,6 +16,29 @@ PROGRESS_PATH = REPO_ROOT / 'qipu' / 'progress.json'
 GRADUATE_STREAK = 3
 
 SIDE_ZH = {'red': '红', 'black': '黑'}
+
+# 难度选项 (最大步数上限), None = 不过滤
+DIFFICULTY_OPTS = [
+    ('3 步杀', 3),
+    ('5 步杀', 5),
+    ('7 步杀', 7),
+    ('全部', None),
+]
+
+# 中文数字
+CN_NUM = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九']
+
+PIECE_NAME = {
+    'R': '车', 'r': '车',
+    'N': '马', 'n': '马',
+    'B': '相', 'b': '象',
+    'A': '仕', 'a': '士',
+    'K': '帅', 'k': '将',
+    'C': '炮', 'c': '炮',
+    'P': '兵', 'p': '卒',
+}
+
+DIAGONAL_PIECES = set('NnBbAa')  # 马/相/象/士/仕 走斜线,记谱用"进/退 目标列"
 
 
 def loadProgress():
@@ -71,6 +95,55 @@ def compressRow(cells):
     return ''.join(out)
 
 
+def pieceAt(fen, move):
+    rows = fen.split('/')
+    fy = 9 - int(move[1])
+    fx = ord(move[0]) - ord('a')
+    row = list(expandRow(rows[fy]))
+    if fx >= len(row):
+        return ' '
+    return row[fx]
+
+
+def moveToQp(fen, move):
+    piece = pieceAt(fen, move)
+    if piece == ' ':
+        return move
+    isRed = piece.isupper()
+    name = PIECE_NAME.get(piece, piece)
+
+    fromCol = ord(move[0]) - ord('a')
+    toCol = ord(move[2]) - ord('a')
+    fromRank = int(move[1])
+    toRank = int(move[3])
+
+    if isRed:
+        fromColNum = 9 - fromCol
+        toColNum = 9 - toCol
+        forward = toRank > fromRank
+        sideTag = '红'
+    else:
+        fromColNum = fromCol + 1
+        toColNum = toCol + 1
+        forward = toRank < fromRank
+        sideTag = '黑'
+
+    def colStr(n):
+        return CN_NUM[n] if isRed else str(n)
+
+    if fromRank == toRank:
+        action = f'平{colStr(toColNum)}'
+    elif piece in DIAGONAL_PIECES:
+        verb = '进' if forward else '退'
+        action = f'{verb}{colStr(toColNum)}'
+    else:
+        verb = '进' if forward else '退'
+        steps = abs(toRank - fromRank)
+        action = f'{verb}{colStr(steps)}'
+
+    return f'{sideTag} {name}{colStr(fromColNum)}{action}'
+
+
 def sortBank(bank, progress):
     # 优先 missed,其次 streak 小的,再次按文件名
     def key(q):
@@ -86,11 +159,12 @@ class MissKillUI(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title('看杀主动训练')
-        self.geometry('760x560')
+        self.geometry('780x580')
 
         self.progress = loadProgress()
-        rawBank = buildQuestionBank()
-        self.bank = sortBank(rawBank, self.progress)
+        self.rawBank = buildQuestionBank()
+        self.maxSteps = 3
+        self.bank = []
         self.questionIdx = 0
 
         self.currentFen = ''
@@ -100,6 +174,24 @@ class MissKillUI(tk.Tk):
         self.lastMove = None
 
         self.initUI()
+        self.applyDifficulty()
+        self.loadQuestion()
+
+    def applyDifficulty(self):
+        if self.maxSteps is None:
+            filtered = list(self.rawBank)
+        else:
+            filtered = [q for q in self.rawBank if len(q['pvs'][0]['moves']) <= self.maxSteps]
+        self.bank = sortBank(filtered, self.progress)
+        self.questionIdx = 0
+
+    def onDifficultyChange(self, _event=None):
+        label = self.cbDiff.get()
+        for text, n in DIFFICULTY_OPTS:
+            if text == label:
+                self.maxSteps = n
+                break
+        self.applyDifficulty()
         self.loadQuestion()
 
     def initUI(self):
@@ -112,11 +204,22 @@ class MissKillUI(tk.Tk):
         self.lblStat = tk.Label(left, text='', font=('Arial', 11), fg='gray30', justify='left')
         self.lblStat.grid(row=1, column=0, columnspan=2, sticky='w', pady=2)
 
-        self.lblStatus = tk.Label(left, text='', font=('Arial', 12), fg='blue', justify='left')
-        self.lblStatus.grid(row=2, column=0, columnspan=2, sticky='w', pady=6)
+        diffRow = tk.Frame(left)
+        diffRow.grid(row=2, column=0, columnspan=2, sticky='w', pady=4)
+        tk.Label(diffRow, text='难度:', font=('Arial', 11)).pack(side=tk.LEFT)
+        self.cbDiff = ttk.Combobox(
+            diffRow, state='readonly', width=8,
+            values=[t for t, _ in DIFFICULTY_OPTS],
+        )
+        self.cbDiff.set(DIFFICULTY_OPTS[0][0])
+        self.cbDiff.pack(side=tk.LEFT, padx=4)
+        self.cbDiff.bind('<<ComboboxSelected>>', self.onDifficultyChange)
+
+        self.lblStatus = tk.Label(left, text='', font=('Arial', 12), fg='blue', justify='left', wraplength=340)
+        self.lblStatus.grid(row=3, column=0, columnspan=2, sticky='w', pady=6)
 
         self.lblHistory = tk.Label(left, text='', font=('Arial', 11), justify='left', anchor='nw')
-        self.lblHistory.grid(row=3, column=0, columnspan=2, sticky='nw', pady=6)
+        self.lblHistory.grid(row=4, column=0, columnspan=2, sticky='nw', pady=6)
 
         tk.Button(left, text='上一题', width=10, command=self.prevQuestion).grid(row=10, column=0, pady=2)
         tk.Button(left, text='下一题', width=10, command=self.nextQuestion).grid(row=10, column=1, pady=2)
@@ -132,7 +235,13 @@ class MissKillUI(tk.Tk):
 
     def loadQuestion(self):
         if not self.bank:
-            self.lblStatus.config(text='题库为空', fg='red')
+            self.lblTitle.config(text='')
+            self.lblStat.config(text='')
+            self.lblHistory.config(text='')
+            self.chessBoard.delete('piece')
+            self.chessBoard.delete('arrow')
+            self.chessBoard.delete('highlight')
+            self.lblStatus.config(text=f'当前难度无题目(共 {len(self.rawBank)} 题,过滤后 0)', fg='red')
             return
         q = self.bank[self.questionIdx]
         self.currentFen = q['fen']
@@ -171,9 +280,12 @@ class MissKillUI(tk.Tk):
         return f'{chr(ord("a") + fx)}{ucirank}'
 
     def onBoardClick(self, event):
+        if not self.bank:
+            return
         q = self.bank[self.questionIdx]
         if self.activePv is not None and self.stepInPv >= len(self.activePv['moves']):
             return
+        self.chessBoard.delete('hint')
         pos = self.posFromEvent(event)
         if pos is None:
             return
@@ -236,7 +348,10 @@ class MissKillUI(tk.Tk):
             self.stepInPv = 0
             self.applyAndRender(move, 'green')
             self.stepInPv = 1
-            self.after(500, self.playOpponent)
+            if self.stepInPv >= len(self.activePv['moves']):
+                self.onQuestionComplete()
+            else:
+                self.after(500, self.playOpponent)
             return
         expected = self.activePv['moves'][self.stepInPv]
         if move != expected:
@@ -265,18 +380,18 @@ class MissKillUI(tk.Tk):
             self.lblStatus.config(text=f'轮到{SIDE_ZH[q["side"]]}方,点击起点→终点', fg='blue')
 
     def applyAndRender(self, move, arrowColor):
+        fenBefore = self.currentFen
         self.currentFen = applyMove(self.currentFen, move)
         self.chessBoard.readFen(self.currentFen)
         self.chessBoard.draw_arrow(move[:2], move[2:], arrowColor, self.stepInPv + 1)
         self.lastMove = move
-        self.appendHistory(move)
+        self.appendHistory(move, fenBefore)
 
-    def appendHistory(self, move):
+    def appendHistory(self, move, fenBefore):
         old = self.lblHistory.cget('text')
-        q = self.bank[self.questionIdx]
         step = self.stepInPv + 1
-        mover = q['side'] if step % 2 == 1 else ('black' if q['side'] == 'red' else 'red')
-        line = f'{step}. {SIDE_ZH[mover]} {move}'
+        qp = moveToQp(fenBefore, move)
+        line = f'{step}. {qp}  ({move})'
         self.lblHistory.config(text=(old + '\n' + line) if old else line)
 
     def onWrong(self, move):
@@ -289,9 +404,10 @@ class MissKillUI(tk.Tk):
         p['file'] = q['file']
         p['idx'] = q['idx']
         saveProgress(self.progress)
-        hintSet = ','.join(q['killMoveSet'])
+        userQp = moveToQp(self.currentFen, move) if pieceAt(self.currentFen, move) != ' ' else move
+        hintSet = '、'.join(moveToQp(fen, m) for m in q['killMoveSet'])
         self.lblStatus.config(
-            text=f'{move} 不在杀手集合。错 {p["wrong"]} 次。杀手:{hintSet}\n重置本题再来',
+            text=f'{userQp} 不在杀手集合。错 {p["wrong"]} 次。\n杀手:{hintSet}\n点"重置本题"再来',
             fg='red',
         )
 
@@ -309,25 +425,59 @@ class MissKillUI(tk.Tk):
         self.lblStatus.config(text=f'完成杀招!{tag}。按"下一题"继续', fg='green')
 
     def showHint(self):
+        if not self.bank:
+            return
         q = self.bank[self.questionIdx]
+        self.chessBoard.delete('hint')
         if self.activePv is None:
-            firstSet = ','.join(q['killMoveSet'])
-            self.lblStatus.config(text=f'提示:第一步可走 {firstSet}', fg='purple')
+            moves = q['killMoveSet']
+            colors = ['purple', 'deep pink', 'dark orange', 'brown', 'magenta']
+            for i, m in enumerate(moves):
+                self.drawHintArrow(m, colors[i % len(colors)])
+            qpList = [moveToQp(q['fen'], m) for m in moves]
+            self.lblStatus.config(text=f'提示:可走 {" / ".join(qpList)}', fg='purple')
         else:
-            nxt = self.activePv['moves'][self.stepInPv] if self.stepInPv < len(self.activePv['moves']) else ''
-            self.lblStatus.config(text=f'提示:下一步 {nxt}', fg='purple')
+            if self.stepInPv >= len(self.activePv['moves']):
+                return
+            nxt = self.activePv['moves'][self.stepInPv]
+            self.drawHintArrow(nxt, 'purple')
+            self.lblStatus.config(text=f'提示:下一步 {moveToQp(self.currentFen, nxt)}', fg='purple')
+
+    def drawHintArrow(self, move, color):
+        w = self.chessBoard.w
+        c1 = ord(move[0]) - ord('a')
+        r1 = int(move[1])
+        c2 = ord(move[2]) - ord('a')
+        r2 = int(move[3])
+        x1 = (c1 + 1) * w
+        y1 = (10 - r1) * w
+        x2 = (c2 + 1) * w
+        y2 = (10 - r2) * w
+        self.chessBoard.create_line(
+            x1, y1, x2, y2,
+            arrow=tk.LAST, fill=color, width=4, dash=(6, 3),
+            arrowshape=(16, 18, 8), tags='hint',
+        )
 
     def showAnswer(self):
+        if not self.bank:
+            return
         q = self.bank[self.questionIdx]
         pv = q['pvs'][0]
         self.chessBoard.readFen(q['fen'])
+        self.chessBoard.delete('hint')
         self.currentFen = q['fen']
+        qpLines = []
+        fenIter = q['fen']
         for i, move in enumerate(pv['moves']):
             mover = q['side'] if i % 2 == 0 else ('black' if q['side'] == 'red' else 'red')
             color = 'red' if mover == 'red' else 'black'
             self.chessBoard.draw_arrow(move[:2], move[2:], color, i + 1)
+            qpLines.append(f'{i + 1}. {moveToQp(fenIter, move)}')
+            fenIter = applyMove(fenIter, move)
         self.activePv = None
         self.stepInPv = 0
+        self.lblHistory.config(text='\n'.join(qpLines))
         self.lblStatus.config(text='答案已展示。按"重置本题"练习,或"下一题"', fg='gray30')
 
     def resetQuestion(self):
