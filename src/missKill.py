@@ -28,7 +28,7 @@ def sideOf(idx):
     return '红' if idx % 2 == 1 else '黑'
 
 
-def killFirstMovesOf(row):
+def killPvsOf(row):
     found = []
     for fenCol, scoreCol in PV_COLS:
         sc = row.get(scoreCol)
@@ -37,9 +37,15 @@ def killFirstMovesOf(row):
         pv = row.get(fenCol)
         if not isinstance(pv, str) or not pv:
             continue
-        first = pv.split(',')[0].strip()
-        found.append((first, int(sc), scoreCol))
+        moves = [m.strip() for m in pv.split(',') if m.strip()]
+        if not moves:
+            continue
+        found.append({'moves': moves, 'score': int(sc), 'col': scoreCol})
     return found
+
+
+def killFirstMovesOf(row):
+    return [(pv['moves'][0], pv['score'], pv['col']) for pv in killPvsOf(row)]
 
 
 def isMissed(row, killMoveSet):
@@ -79,6 +85,34 @@ def scanOne(csvPath):
             'missed': missed,
         })
     return rows
+
+
+def buildQuestionBank(includeMissedOnly=False):
+    bank = []
+    for p in listCsv():
+        try:
+            df = pd.read_csv(p)
+        except Exception:
+            continue
+        for _, row in df.iterrows():
+            pvs = killPvsOf(row)
+            if not pvs:
+                continue
+            killMoveSet = {pv['moves'][0] for pv in pvs}
+            missed = isMissed(row, killMoveSet)
+            if includeMissedOnly and not missed:
+                continue
+            bank.append({
+                'file': p.name,
+                'idx': int(row['idx']),
+                'side': 'red' if int(row['idx']) % 2 == 1 else 'black',
+                'fen': row['fen'],
+                'pvs': pvs,
+                'killMoveSet': sorted(killMoveSet),
+                'missed': missed,
+                'userMove': row.get('move_fen') if isinstance(row.get('move_fen'), str) else '',
+            })
+    return bank
 
 
 def main():
