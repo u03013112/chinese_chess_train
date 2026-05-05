@@ -16,6 +16,48 @@ pNameList = [
     {'qpName':"马",'fenName':"N"}
 ]
 
+def expandFenRow(row):
+    # 将 fen 一行(如 '1R1ckab2')展开为长度 9 的列表,' ' 代表空格
+    out = []
+    for ch in row:
+        if ch.isdigit():
+            out.extend([' '] * int(ch))
+        else:
+            out.append(ch)
+    return out
+
+
+def compressFenRow(cells):
+    # 与 expandFenRow 互逆
+    out = []
+    blank = 0
+    for c in cells:
+        if c == ' ':
+            blank += 1
+        else:
+            if blank:
+                out.append(str(blank))
+                blank = 0
+            out.append(c)
+    if blank:
+        out.append(str(blank))
+    return ''.join(out)
+
+
+def applyMove(fen, move):
+    # UCI move: 例 'h2e2' 表示 (file=h, rank=2) -> (file=e, rank=2)
+    # fen 行序从上到下对应 rank 9..0
+    rows = [expandFenRow(r) for r in fen.split('/')]
+    fx = ord(move[0]) - ord('a')
+    fy = 9 - int(move[1])
+    tx = ord(move[2]) - ord('a')
+    ty = 9 - int(move[3])
+    piece = rows[fy][fx]
+    rows[fy][fx] = ' '
+    rows[ty][tx] = piece
+    return '/'.join(compressFenRow(r) for r in rows)
+
+
 def getMove(lastFen, fen, debug=False):
     if debug:
         print('lastFen:', lastFen)

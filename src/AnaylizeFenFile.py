@@ -6,75 +6,122 @@
 # 设定阈值，如果差的程度超过阈值，就是我的走法不好
 # 针对不好的走法，记录下来，并记录下来最佳走法（多个）
 
-# 初步格式定义
-# csv文件
-# 列1，fen string类型，类似于：rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR
-# 列2，my_move string类型，类似于：'h2e2'
-# 列3，my_score int类型，类似于：-100
-# 列4，best_move1 string类型，类似于：'h2e2'
-# 列5，best_score1 int类型，类似于：-100
-# 列6，best_move2 string类型，类似于：'h2e2'
-# 列7，best_score2 int类型，类似于：-100
-# 列8，best_move3 string类型，类似于：'h2e2'
-# 列9，best_score3 int类型，类似于：-100
-# 额外的，可能可以加上是哪方走的，是红方还是黑方，方便之后过滤。
-# 另外，可以将各种move都加一组中文注释，方便阅读。
+# CSV 列（向后兼容，仍保留 top3 列）
+# 新增列:
+#   kill_moves_json —— score>=KILL_THRESHOLD 的所有 PV 的 JSON 序列化。
+#                      结构: [{"moves":[m1,m2,...],"score":9500}, ...]
+# 同时生成同名 .pv.json 文件，记录每条 PV 沿途展开出的中间 FEN 的 killMove 映射。
+# 结构: {
+#   "<中间fen>": [{"move":"<uci>","score":9500,"remaining":[...]}, ...],
+#   ...
+# }
+# remaining 是该中间局面之后 PV 剩余步序列（含当前这一步）。
 
 import os
 import csv
+import json
 from pikafishHelper import PikafishHelper
-from tools import getMove, lastFenAndMove2Qp
+from tools import getMove, lastFenAndMove2Qp, applyMove
 
-def analyzeFenFile(filename, output_csv):
+KILL_THRESHOLD = 9000
+
+
+def expandPvIntoKillMap(rootFen, pv, killMap):
+    # 沿 PV 每一步推导中间 fen，把每个中间 fen 到其下一步的映射写进 killMap
+    fen = rootFen
+    moves = pv['moves']
+    score = int(pv['score'])
+    for i, mv in enumerate(moves):
+        remaining = moves[i:]
+        entry = {'move': mv, 'score': score, 'remaining': remaining}
+        killMap.setdefault(fen, []).append(entry)
+        fen = applyMove(fen, mv)
+
+
+def dedupeKillMap(killMap):
+    # 同一 fen 被多条 PV 覆盖时，同 move 只保留最高 score 的那条（remaining 也跟随）
+    out = {}
+    for fen, entries in killMap.items():
+        bestByMove = {}
+        for e in entries:
+            mv = e['move']
+            cur = bestByMove.get(mv)
+            if cur is None or e['score'] > cur['score']:
+                bestByMove[mv] = e
+        out[fen] = sorted(bestByMove.values(), key=lambda x: x['score'], reverse=True)
+    return out
+
+
+def analyzeFenFile(filename, output_csv, output_pv_json=None):
+    if output_pv_json is None:
+        output_pv_json = output_csv.replace('.csv', '.pv.json')
     with open(filename, 'r') as f:
         content = f.read().strip()
         lines = content.split('\n')
         moves = []
         pikafishHelper = PikafishHelper()
         results = []
-        for i in range(len(lines)-1):
+        killMap = {}
+        for i in range(len(lines) - 1):
             fen = lines[i]
-            nextFen = lines[i+1]
-            p,move = getMove(fen,nextFen)
+            nextFen = lines[i + 1]
+            p, move = getMove(fen, nextFen)
             response = pikafishHelper.go2(moves)
             moves.append(move)
-            # 找到最好的走法
-            # parsedResp = pikafishHelper.parseGoResponse(response,logPath = f'log{i+1}.txt')
             parsedResp = pikafishHelper.parseGoResponse(response)
-            best_moves = parsedResp[0:3]  # 取前3个最佳走法
+            best_moves = parsedResp[0:3]
 
-            # 找到我的走法，在所有的走法中的排名
-            # 默认是最后一名，即所有答案以外的答案
+            # 找到用户走法在所有候选中的排名
             myRank = -1
-            for idx,resp in enumerate(parsedResp):
+            for idx, resp in enumerate(parsedResp):
                 if resp['moves'][0] == move:
-                    myRank = idx+1
+                    myRank = idx + 1
                     break
 
-            # 记录结果
+            # 收集所有 score>=KILL_THRESHOLD 的 PV
+            killPvs = [pv for pv in parsedResp if int(pv['score']) >= KILL_THRESHOLD]
+            killPvsJson = json.dumps(
+                [{'moves': pv['moves'], 'score': int(pv['score'])} for pv in killPvs],
+                ensure_ascii=False,
+            )
+
+            # 把每条 kill PV 沿途展开，写进 killMap（跨整个棋谱共享）
+            for pv in killPvs:
+                expandPvIntoKillMap(fen, pv, killMap)
+
             result = {
-                'idx': i+1,
+                'idx': i + 1,
                 'fen': fen,
-                'move_fen': move,  # 原始的move
-                'move_qp': lastFenAndMove2Qp(fen,move),
-                'score': parsedResp[myRank-1]['score'] if myRank != -1 else None,
+                'move_fen': move,
+                'move_qp': lastFenAndMove2Qp(fen, move),
+                'score': parsedResp[myRank - 1]['score'] if myRank != -1 else None,
+                'kill_moves_json': killPvsJson,
             }
-            for i, best_move in enumerate(best_moves, start=1):
-                result[f'best_move{i}_fen'] = ','.join(best_move['moves'])  # 将整个队列存起来，使用逗号隔开
-                result[f'best_move{i}_qp'] = ','.join([lastFenAndMove2Qp(fen, m) for m in best_move['moves']])
-                result[f'best_score{i}'] = best_move['score']
+            for j, best_move in enumerate(best_moves, start=1):
+                result[f'best_move{j}_fen'] = ','.join(best_move['moves'])
+                result[f'best_move{j}_qp'] = ','.join([lastFenAndMove2Qp(fen, m) for m in best_move['moves']])
+                result[f'best_score{j}'] = best_move['score']
             results.append(result)
 
-        # 保存到CSV文件
-        keys = ['idx', 'fen', 'move_fen', 'move_qp', 'score', 'best_move1_fen', 'best_move1_qp', 'best_score1', 'best_move2_fen', 'best_move2_qp', 'best_score2', 'best_move3_fen', 'best_move3_qp', 'best_score3']
+        keys = [
+            'idx', 'fen', 'move_fen', 'move_qp', 'score',
+            'best_move1_fen', 'best_move1_qp', 'best_score1',
+            'best_move2_fen', 'best_move2_qp', 'best_score2',
+            'best_move3_fen', 'best_move3_qp', 'best_score3',
+            'kill_moves_json',
+        ]
         with open(output_csv, 'w', newline='') as output_file:
             dict_writer = csv.DictWriter(output_file, keys)
             dict_writer.writeheader()
             dict_writer.writerows(results)
 
+        killMap = dedupeKillMap(killMap)
+        with open(output_pv_json, 'w', encoding='utf-8') as fjson:
+            json.dump(killMap, fjson, ensure_ascii=False, indent=2)
+
+
 def main():
     path = '../qipu/'
-    # 找到所有的txt文件，如果有同名的csv文件，就跳过
     for file in os.listdir(path):
         if file.endswith('.txt'):
             csv_file = file.replace('.txt', '.csv')
@@ -83,7 +130,6 @@ def main():
             print(f'Analyzing {file}...')
             analyzeFenFile(os.path.join(path, file), os.path.join(path, csv_file))
 
+
 if __name__ == '__main__':
     main()
-    
-

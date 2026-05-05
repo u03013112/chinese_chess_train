@@ -2,6 +2,10 @@
 *.avi
 chrome_data
 
+# 个人练习进度 / 一次性批处理脚本
+qipu/progress.json
+src/batchAnalyze5*.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

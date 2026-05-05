@@ -1,31 +1,54 @@
 import math
 import tkinter as tk
 
+CN_NUM_RED = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九']
+
+
 class ChessBoard(tk.Canvas):
     def __init__(self, master=None, w=30, **kwargs):
         super().__init__(master, **kwargs)
         self.w = w  # 棋盘格子的大小
-        
+        self.flipped = False  # True = 黑方视角(黑方放屏幕下方)
+
     def draw_board(self, style=1):
-        # 画棋盘
+        # style=1 早期开发用;style=2 UCI 坐标(a..i / 0..9);style=3 中式
+        self.delete('axis')
+        # 画棋盘横线
         for i in range(10):
             self.create_line(self.w, self.w + i * self.w, 9 * self.w, self.w + i * self.w)
             if style == 2:
-                self.create_text(self.w * 0.4, self.w * (i + 1), text=str(9-i), font=('Arial', 10))
+                self.create_text(self.w * 0.4, self.w * (i + 1), text=str(9 - i),
+                                 font=('Arial', 10), tags='axis')
+        # 画棋盘竖线
         for i in range(9):
-            if i == 0 or i == 8:  # 画边界线
+            if i == 0 or i == 8:
                 self.create_line(self.w + i * self.w, self.w, self.w + i * self.w, 10 * self.w)
-            else:  # 画楚河汉界中间没有竖线
+            else:
                 self.create_line(self.w + i * self.w, self.w, self.w + i * self.w, 5 * self.w)
                 self.create_line(self.w + i * self.w, 6 * self.w, self.w + i * self.w, 10 * self.w)
 
-            # 添加坐标
             if style == 1:
-                self.create_text(self.w * (i + 1), self.w * 0.4, text=str(i + 1), font=('Arial', 10))
-                self.create_text(self.w * (i + 1), self.w * 10.6, text=str(9 - i), font=('Arial', 10))
+                self.create_text(self.w * (i + 1), self.w * 0.4, text=str(i + 1),
+                                 font=('Arial', 10), tags='axis')
+                self.create_text(self.w * (i + 1), self.w * 10.6, text=str(9 - i),
+                                 font=('Arial', 10), tags='axis')
             elif style == 2:
-                self.create_text(self.w * (i + 1), self.w * 10.6, text=chr(ord('a') + i), font=('Arial', 10))
-                
+                self.create_text(self.w * (i + 1), self.w * 10.6, text=chr(ord('a') + i),
+                                 font=('Arial', 10), tags='axis')
+            elif style == 3:
+                # 中式标注:屏幕上方 = 黑方列号(阿拉伯 1..9,从左往右)
+                #          屏幕下方 = 红方列号(汉字 九..一,从左往右)
+                # 翻转视角时红黑互换
+                if not self.flipped:
+                    topText = str(i + 1)
+                    botText = CN_NUM_RED[9 - i]
+                else:
+                    topText = CN_NUM_RED[i + 1]
+                    botText = str(9 - i)
+                self.create_text(self.w * (i + 1), self.w * 0.4, text=topText,
+                                 font=('Arial', 11), tags='axis')
+                self.create_text(self.w * (i + 1), self.w * 10.6, text=botText,
+                                 font=('Arial', 11), tags='axis')
 
         # 画九宫格
         self.create_line(4 * self.w, self.w, 6 * self.w, 3 * self.w)
@@ -34,6 +57,20 @@ class ChessBoard(tk.Canvas):
         self.create_line(4 * self.w, 10 * self.w, 6 * self.w, 8 * self.w)
 
 
+
+    def uciToXY(self, pos):
+        col = ord(pos[0]) - ord('a')
+        rank = int(pos[1])
+        x = (col + 1) * self.w
+        y = (10 - rank) * self.w
+        return x, y
+
+    def xyToUci(self, px, py):
+        col = round(px / self.w - 1)
+        rank = round(10 - py / self.w)
+        if not (0 <= col <= 8) or not (0 <= rank <= 9):
+            return None
+        return f'{chr(ord("a") + col)}{rank}'
 
     def draw_piece(self, x, y, color, text):
         a = int(self.w*0.9/2)
@@ -48,9 +85,7 @@ class ChessBoard(tk.Canvas):
 
     def place_piece(self, pos, color, text):
         # Convert FEN position to canvas coordinates
-        x = (ord(pos[0]) - ord('a') + 1) * self.w
-        # y = (10 - int(pos[1])) * self.w
-        y = (int(pos[1]) + 1) * self.w
+        x, y = self.uciToXY(pos)
         self.draw_piece(x, y, color, text)
 
     def readFen(self, fen):
@@ -63,8 +98,10 @@ class ChessBoard(tk.Canvas):
                 if char.isdigit():
                     col_idx += int(char)
                 else:
-                    pos = chr(ord('a') + col_idx) + str(row_idx)
-                    color = '黑' if char.isupper() == False else '红'
+                    # FEN 约定:rows[0] 是黑方底线(最上方),rank 9;rows[9] 是红方底线(最下方),rank 0
+                    pos = chr(ord('a') + col_idx) + str(9 - row_idx)
+                    # FEN 大小写约定:大写=红方,小写=黑方(与标准 UCI 一致)
+                    color = '红' if char.isupper() else '黑'
                     
                     text = ''
                     if char.lower() == 'r':
@@ -95,11 +132,8 @@ class ChessBoard(tk.Canvas):
                     col_idx += 1
         
     def draw_arrow(self, pos1, pos2, color,number):
-        # Convert FEN positions to canvas coordinates
-        x1 = (ord(pos1[0]) - ord('a') + 1) * self.w
-        y1 = (10 - int(pos1[1])) * self.w
-        x2 = (ord(pos2[0]) - ord('a') + 1) * self.w
-        y2 = (10 - int(pos2[1])) * self.w
+        x1, y1 = self.uciToXY(pos1)
+        x2, y2 = self.uciToXY(pos2)
 
         # Draw arrow
         self.create_line(x1, y1, x2, y2, arrow=tk.LAST, fill=color, width=5, arrowshape=(20, 20, 10), tags='arrow')

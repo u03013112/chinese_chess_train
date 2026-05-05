@@ -1,4 +1,5 @@
 
+import json
 import os
 import sys
 from pathlib import Path
@@ -11,7 +12,9 @@ REPO_ROOT = SCRIPT_DIR.parent
 QIPU_DIR = REPO_ROOT / 'qipu'
 
 KILL_THRESHOLD = 9000
-PV_COLS = [
+
+# 老 CSV 的向后兼容列
+LEGACY_PV_COLS = [
     ('best_move1_fen', 'best_score1'),
     ('best_move2_fen', 'best_score2'),
     ('best_move3_fen', 'best_score3'),
@@ -29,10 +32,29 @@ def sideOf(idx):
 
 
 def killPvsOf(row):
+    # 优先读新列 kill_moves_json
+    blob = row.get('kill_moves_json') if 'kill_moves_json' in row.index else None
+    if isinstance(blob, str) and blob.strip():
+        try:
+            parsed = json.loads(blob)
+        except Exception:
+            parsed = None
+        if parsed:
+            found = []
+            for pv in parsed:
+                score = int(pv['score'])
+                if score < KILL_THRESHOLD:
+                    continue
+                moves = pv.get('moves') or []
+                if not moves:
+                    continue
+                found.append({'moves': moves, 'score': score, 'col': 'kill_moves_json'})
+            return found
+    # fallback 老列
     found = []
-    for fenCol, scoreCol in PV_COLS:
+    for fenCol, scoreCol in LEGACY_PV_COLS:
         sc = row.get(scoreCol)
-        if pd.isna(sc) or sc <= KILL_THRESHOLD:
+        if pd.isna(sc) or sc < KILL_THRESHOLD:
             continue
         pv = row.get(fenCol)
         if not isinstance(pv, str) or not pv:
@@ -54,9 +76,9 @@ def isMissed(row, killMoveSet):
         return True
     if userMove in killMoveSet:
         return False
-    # 用户这步本身就是杀(score > 9000),即便不在 top3 PV 里也不算漏
+    # 用户这步本身就是杀(score >= 9000),即便不在收录里也不算漏
     userScore = row.get('score')
-    if not pd.isna(userScore) and userScore > KILL_THRESHOLD:
+    if not pd.isna(userScore) and userScore >= KILL_THRESHOLD:
         return False
     return True
 
@@ -87,8 +109,36 @@ def scanOne(csvPath):
     return rows
 
 
+def sideOfFen(fen):
+    # 靠局面推断轮到谁走:FEN 中红车为'R',黑车为'r'。
+    # 这里 missKill 只拿到 fen 本身(没有 wOrB 字段),通过 rank 0 是否还有红大子推断不靠谱。
+    # 退化方案:用 kill_moves 的首步首字符(UCI 起点格)上的棋子大小写判断。
+    return None
+
+
+def sideOfPvEntry(fen, move):
+    # move 起点格的棋子大小写决定该步谁在走
+    fx = ord(move[0]) - ord('a')
+    fy = 9 - int(move[1])
+    rows = fen.split('/')
+    if fy < 0 or fy >= len(rows):
+        return 'red'
+    cells = []
+    for ch in rows[fy]:
+        if ch.isdigit():
+            cells.extend([' '] * int(ch))
+        else:
+            cells.append(ch)
+    if fx < 0 or fx >= len(cells):
+        return 'red'
+    ch = cells[fx]
+    return 'red' if ch.isupper() else 'black'
+
+
 def buildQuestionBank(includeMissedOnly=False):
     bank = []
+    seenFen = set()
+    # 第一轮:从 CSV 收集「实际棋谱」上的 kill 局面
     for p in listCsv():
         try:
             df = pd.read_csv(p)
@@ -102,16 +152,59 @@ def buildQuestionBank(includeMissedOnly=False):
             missed = isMissed(row, killMoveSet)
             if includeMissedOnly and not missed:
                 continue
+            fen = row['fen']
+            seenFen.add(fen)
             bank.append({
                 'file': p.name,
                 'idx': int(row['idx']),
                 'side': 'red' if int(row['idx']) % 2 == 1 else 'black',
-                'fen': row['fen'],
+                'fen': fen,
                 'pvs': pvs,
                 'killMoveSet': sorted(killMoveSet),
                 'missed': missed,
                 'userMove': row.get('move_fen') if isinstance(row.get('move_fen'), str) else '',
+                'source': 'csv',
             })
+    # 第二轮:从 .pv.json 补充 PV 展开的中间局面
+    if not QIPU_DIR.exists():
+        return bank
+    for pvPath in sorted(QIPU_DIR.glob('*.pv.json')):
+        try:
+            with open(pvPath, 'r', encoding='utf-8') as f:
+                killMap = json.load(f)
+        except Exception:
+            continue
+        for fen, entries in killMap.items():
+            if fen in seenFen:
+                continue
+            if not entries:
+                continue
+            pvs = [
+                {
+                    'moves': e['remaining'],
+                    'score': int(e['score']),
+                    'col': 'pv.json',
+                }
+                for e in entries
+            ]
+            killMoveSet = {pv['moves'][0] for pv in pvs}
+            # 展开局面的 "missed" 是没有意义的(没有用户真实走法),标 False
+            missed = False
+            if includeMissedOnly:
+                continue
+            side = sideOfPvEntry(fen, entries[0]['move'])
+            bank.append({
+                'file': pvPath.name,
+                'idx': 0,
+                'side': side,
+                'fen': fen,
+                'pvs': pvs,
+                'killMoveSet': sorted(killMoveSet),
+                'missed': missed,
+                'userMove': '',
+                'source': 'pv',
+            })
+            seenFen.add(fen)
     return bank
 
 

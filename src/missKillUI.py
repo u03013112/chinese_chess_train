@@ -7,6 +7,7 @@ from tkinter import ttk
 
 from ChessBoard import ChessBoard
 from missKill import buildQuestionBank
+from tools import applyMove, expandFenRow
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -17,12 +18,24 @@ GRADUATE_STREAK = 3
 
 SIDE_ZH = {'red': '红', 'black': '黑'}
 
-# 难度选项 (最大步数上限), None = 不过滤
+# 难度选项: (label, exactSteps | None),exactSteps=None 表示不限步数(含所有长度)
 DIFFICULTY_OPTS = [
+    ('1 步杀', 1),
     ('3 步杀', 3),
     ('5 步杀', 5),
     ('7 步杀', 7),
+    ('9 步杀', 9),
     ('全部', None),
+]
+
+# 来源选项: (label, sourceFilter)
+#   'csv' = 仅棋谱实际局面的杀题(根 FEN)
+#   'pv'  = 仅 PV 沿途展开的中间局面
+#   None  = 全部
+SOURCE_OPTS = [
+    ('仅根局面', 'csv'),
+    ('含展开', None),
+    ('仅展开', 'pv'),
 ]
 
 # 中文数字
@@ -57,49 +70,11 @@ def saveProgress(data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def applyMove(fen, move):
-    rows = [list(expandRow(r)) for r in fen.split('/')]
-    fx = ord(move[0]) - ord('a')
-    fy = 9 - int(move[1])
-    tx = ord(move[2]) - ord('a')
-    ty = 9 - int(move[3])
-    piece = rows[fy][fx]
-    rows[fy][fx] = ' '
-    rows[ty][tx] = piece
-    return '/'.join(compressRow(r) for r in rows)
-
-
-def expandRow(row):
-    out = []
-    for ch in row:
-        if ch.isdigit():
-            out.extend([' '] * int(ch))
-        else:
-            out.append(ch)
-    return out
-
-
-def compressRow(cells):
-    out = []
-    blank = 0
-    for c in cells:
-        if c == ' ':
-            blank += 1
-        else:
-            if blank:
-                out.append(str(blank))
-                blank = 0
-            out.append(c)
-    if blank:
-        out.append(str(blank))
-    return ''.join(out)
-
-
 def pieceAt(fen, move):
     rows = fen.split('/')
     fy = 9 - int(move[1])
     fx = ord(move[0]) - ord('a')
-    row = list(expandRow(rows[fy]))
+    row = list(expandFenRow(rows[fy]))
     if fx >= len(row):
         return ' '
     return row[fx]
@@ -163,7 +138,8 @@ class MissKillUI(tk.Tk):
 
         self.progress = loadProgress()
         self.rawBank = buildQuestionBank()
-        self.maxSteps = 3
+        self.exactSteps = 3
+        self.sourceFilter = 'csv'
         self.bank = []
         self.questionIdx = 0
 
@@ -178,10 +154,11 @@ class MissKillUI(tk.Tk):
         self.loadQuestion()
 
     def applyDifficulty(self):
-        if self.maxSteps is None:
-            filtered = list(self.rawBank)
-        else:
-            filtered = [q for q in self.rawBank if len(q['pvs'][0]['moves']) <= self.maxSteps]
+        filtered = list(self.rawBank)
+        if self.exactSteps is not None:
+            filtered = [q for q in filtered if len(q['pvs'][0]['moves']) == self.exactSteps]
+        if self.sourceFilter is not None:
+            filtered = [q for q in filtered if q.get('source') == self.sourceFilter]
         self.bank = sortBank(filtered, self.progress)
         self.questionIdx = 0
 
@@ -189,7 +166,16 @@ class MissKillUI(tk.Tk):
         label = self.cbDiff.get()
         for text, n in DIFFICULTY_OPTS:
             if text == label:
-                self.maxSteps = n
+                self.exactSteps = n
+                break
+        self.applyDifficulty()
+        self.loadQuestion()
+
+    def onSourceChange(self, _event=None):
+        label = self.cbSource.get()
+        for text, s in SOURCE_OPTS:
+            if text == label:
+                self.sourceFilter = s
                 break
         self.applyDifficulty()
         self.loadQuestion()
@@ -211,9 +197,18 @@ class MissKillUI(tk.Tk):
             diffRow, state='readonly', width=8,
             values=[t for t, _ in DIFFICULTY_OPTS],
         )
-        self.cbDiff.set(DIFFICULTY_OPTS[0][0])
+        self.cbDiff.set('3 步杀')
         self.cbDiff.pack(side=tk.LEFT, padx=4)
         self.cbDiff.bind('<<ComboboxSelected>>', self.onDifficultyChange)
+
+        tk.Label(diffRow, text='  来源:', font=('Arial', 11)).pack(side=tk.LEFT)
+        self.cbSource = ttk.Combobox(
+            diffRow, state='readonly', width=8,
+            values=[t for t, _ in SOURCE_OPTS],
+        )
+        self.cbSource.set('仅根局面')
+        self.cbSource.pack(side=tk.LEFT, padx=4)
+        self.cbSource.bind('<<ComboboxSelected>>', self.onSourceChange)
 
         self.lblStatus = tk.Label(left, text='', font=('Arial', 12), fg='blue', justify='left', wraplength=340)
         self.lblStatus.grid(row=3, column=0, columnspan=2, sticky='w', pady=6)
@@ -229,7 +224,7 @@ class MissKillUI(tk.Tk):
         tk.Button(left, text='跳到第一道未毕业', width=18, command=self.jumpPending).grid(row=12, column=1, pady=2)
 
         self.chessBoard = ChessBoard(self, width=330, height=360, w=32)
-        self.chessBoard.draw_board(style=2)
+        self.chessBoard.draw_board(style=3)
         self.chessBoard.grid(row=0, column=1, padx=16, pady=10, sticky='n')
         self.chessBoard.bind('<Button-1>', self.onBoardClick)
 
@@ -272,12 +267,7 @@ class MissKillUI(tk.Tk):
         self.lblHistory.config(text='')
 
     def posFromEvent(self, event):
-        w = self.chessBoard.w
-        fx = round(event.x / w - 1)
-        ucirank = round(10 - event.y / w)
-        if not (0 <= fx <= 8) or not (0 <= ucirank <= 9):
-            return None
-        return f'{chr(ord("a") + fx)}{ucirank}'
+        return self.chessBoard.xyToUci(event.x, event.y)
 
     def onBoardClick(self, event):
         if not self.bank:
@@ -326,10 +316,7 @@ class MissKillUI(tk.Tk):
 
     def highlightSquare(self, pos, color):
         w = self.chessBoard.w
-        col = ord(pos[0]) - ord('a')
-        rank = int(pos[1])
-        cx = (col + 1) * w
-        cy = (10 - rank) * w
+        cx, cy = self.chessBoard.uciToXY(pos)
         r = w * 0.45
         self.chessBoard.delete('highlight')
         self.chessBoard.create_oval(
@@ -444,15 +431,8 @@ class MissKillUI(tk.Tk):
             self.lblStatus.config(text=f'提示:下一步 {moveToQp(self.currentFen, nxt)}', fg='purple')
 
     def drawHintArrow(self, move, color):
-        w = self.chessBoard.w
-        c1 = ord(move[0]) - ord('a')
-        r1 = int(move[1])
-        c2 = ord(move[2]) - ord('a')
-        r2 = int(move[3])
-        x1 = (c1 + 1) * w
-        y1 = (10 - r1) * w
-        x2 = (c2 + 1) * w
-        y2 = (10 - r2) * w
+        x1, y1 = self.chessBoard.uciToXY(move[:2])
+        x2, y2 = self.chessBoard.uciToXY(move[2:])
         self.chessBoard.create_line(
             x1, y1, x2, y2,
             arrow=tk.LAST, fill=color, width=4, dash=(6, 3),
