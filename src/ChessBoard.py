@@ -61,13 +61,21 @@ class ChessBoard(tk.Canvas):
     def uciToXY(self, pos):
         col = ord(pos[0]) - ord('a')
         rank = int(pos[1])
-        x = (col + 1) * self.w
-        y = (10 - rank) * self.w
+        if not self.flipped:
+            x = (col + 1) * self.w
+            y = (10 - rank) * self.w
+        else:
+            x = (9 - col) * self.w
+            y = (rank + 1) * self.w
         return x, y
 
     def xyToUci(self, px, py):
-        col = round(px / self.w - 1)
-        rank = round(10 - py / self.w)
+        if not self.flipped:
+            col = round(px / self.w - 1)
+            rank = round(10 - py / self.w)
+        else:
+            col = round(9 - px / self.w)
+            rank = round(py / self.w - 1)
         if not (0 <= col <= 8) or not (0 <= rank <= 9):
             return None
         return f'{chr(ord("a") + col)}{rank}'

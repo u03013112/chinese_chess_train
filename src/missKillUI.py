@@ -245,6 +245,9 @@ class MissKillUI(tk.Tk):
         self.clickFirst = None
         self.lastMove = None
         self.chessBoard.delete('highlight')
+        self.chessBoard.flipped = (q['side'] == 'black')
+        self.chessBoard.delete('all')
+        self.chessBoard.draw_board(style=3)
         self.chessBoard.readFen(self.currentFen)
 
         p = self.progress.get(q['fen'], {})
