@@ -205,7 +205,20 @@ def buildQuestionBank(includeMissedOnly=False):
                 'source': 'pv',
             })
             seenFen.add(fen)
-    return bank
+    # 同一 FEN 可能在多盘棋谱中重复出现(开局套路、复盘重入)。
+    # 保留规则:优先 missed=True,其次 killMoveSet 最大(解法更全)
+    dedup = {}
+    for q in bank:
+        key = q['fen']
+        prev = dedup.get(key)
+        if prev is None:
+            dedup[key] = q
+            continue
+        if q['missed'] and not prev['missed']:
+            dedup[key] = q
+        elif q['missed'] == prev['missed'] and len(q['killMoveSet']) > len(prev['killMoveSet']):
+            dedup[key] = q
+    return list(dedup.values())
 
 
 def main():
